@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A.2. Rectas en el plano</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React 17 & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --accent: #059669;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --purple: #7c3aed;
+      --bg: #f8fafc;
+      --panel-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #f9fafb;
+      overflow: auto !important; 
+      height: auto !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+    }
+    #root {
+      min-height: 800px; 
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .math-step {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.85rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .math-step h4 { margin-bottom: 0.45rem; color: var(--primary); font-size: 0.92rem; display:flex; justify-content:space-between; align-items:center; }
+    .math-step p { margin-bottom: 0.35rem; font-size: 0.84rem; color: #334155; line-height: 1.45; }
+    .math-step code { background: #f1f5f9; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600; color: #0f172a; font-size: 0.88rem; }
+    
+    .card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--primary-light);
+    }
+    input[type="number"] {
+      width: 65px;
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      text-align: right;
+    }
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      background: white;
+    }
+    .formula-display {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid var(--primary-light);
+      border-radius: 6px;
+      padding: 0.85rem;
+      font-family: 'Times New Roman', Times, Georgia, serif;
+      font-size: 1.12rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 52px;
+      overflow-x: auto;
+    }
+    .formula-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0.2rem 0;
+    }
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      padding: 0 4px;
+      line-height: 1.1;
+      font-size: 0.95em;
+    }
+    .frac-num {
+      border-bottom: 1.5px solid #334155;
+      padding-bottom: 2px;
+    }
+    .frac-den { padding-top: 2px; }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .results-table td {
+      padding: 0.35rem 0.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .results-table td:first-child {
+      font-weight: 600;
+      color: #475569;
+      width: 48%;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-primary { background: #dbeafe; color: #1e40af; }
+    .badge-accent { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .instruction {
+      font-size: 0.82rem;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .columns-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .columns-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const translations = {
+      es: {
+        title: "A.2. Rectas en el plano",
+        shortTitle: "Rectas en el plano",
+        footer: "© 2026 Área de Mecánica de Medios Continuos y Teoría de Estructuras. Escuela Politécnica Superior. Universidad CEU San Pablo. v.1.0 Septiembre 2026",
+        tabEquations: "1. Ecuaciones",
+        tabRelations: "2. Distancias & Intersecciones",
+        tabTriangles: "3. Triángulos & Centros",
+
+        eqTypeTitle: "Forma de la Ecuación",
+        eqFormulas: "Fórmulas",
+        eqParams: "Parámetros Ajustables",
+        eqProperties: "Propiedades Geométricas",
+        optVector: "1. Ecuación Vectorial",
+        optParametric: "2. Ecuaciones Paramétricas",
+        optContinuous: "3. Ecuación Continua (Simétrica)",
+        optImplicit: "4. Ecuación Implícita (General)",
+        optExplicit: "5. Ecuación Explícita (Pendiente-Ordenada)",
+        optPointSlope: "6. Ecuación Punto-Pendiente",
+        optPerpendicular: "7. Recta perpendicular por un punto",
+        optTwoPoints: "8. Recta por dos puntos",
+
+        explExplicit: "La pendiente <b>m</b> indica inclinación; <b>n</b> indica el corte con el eje vertical (0, n).",
+        explVector: "Partiendo de <b>p̄</b>, sumamos múltiplos del vector director <b>d̄</b> para generar cada punto de la recta.",
+        explParametric: "Descompone el vector en componentes independientes dependientes del parámetro <i>t</i>.",
+        explContinuous: "Resulta de despejar <i>t</i> en ambas coordenadas e igualarlas directamente.",
+        explImplicit: "El vector <b>n̄ = (A, B)</b> es perpendicular y <b>d̄ = (-B, A)</b> es paralelo a la recta.",
+        explPointSlope: "Permite escribir la recta inmediatamente con un punto exacto y su pendiente.",
+        explPerpendicular: "La nueva recta pasa por P y su pendiente es m' = -1/m respecto a la recta base.",
+        explTwoPoints: "Construye el vector director restando directamente las coordenadas de ambos puntos.",
+
+        lblSlope: "Pendiente (m)",
+        lblIntercept: "Ordenada al origen (n)",
+        lblBaseSlope: "Pendiente base (m)",
+        lblPointP: "Punto Conocido P (Xp, Yp)",
+        lblVectorD: "Vector Director d̄ (Dx, Dy)",
+        lblParamT: "Parámetro t (recorrido)",
+        lblCoefA: "Coeficiente A",
+        lblCoefB: "Coeficiente B",
+        lblCoefC: "Término Indep. C",
+        lblPointXp: "Punto Xp",
+        lblPointYp: "Punto Yp",
+        lblPointQ: "Segundo Punto Q (Xq, Yq)",
+
+        propDirVec: "Vector Director:",
+        propNormVec: "Vector Normal:",
+        propSlope: "Pendiente (m):",
+        propPerpSlope: "Pendiente ⟂ (m'):",
+        propAngle: "Inclinación:",
+        lblVertical: "∞ (Vertical)",
+
+        relTypeTitle: "Relación Geométrica",
+        relParams: "Parámetros",
+        relAnalysis: "Cálculo y Procedimiento",
+        opt9: "9. Intersección de Dos Rectas",
+        opt10: "10. Intersección con su Perpendicular (Proyección)",
+        opt11: "11. Punto Medio de un Segmento",
+        opt12: "12. Distancia Entre Dos Puntos",
+        opt13: "13. Distancia de un Punto a una Recta",
+        opt14: "14. Ángulo Entre Dos Rectas",
+        opt161: "16.1 Distancia Entre Rectas Paralelas",
+        opt162: "16.2 Bisectrices del Ángulo",
+
+        lblLineR: "Recta r",
+        lblPointExt: "Punto P",
+        lblLineR1: "Recta r",
+        lblLineR2: "Recta s",
+        lblCommonNormal: "Coeficientes Comunes (A, B)",
+        lblTermsC: "Términos Independientes",
+
+        resMidpoint: "Punto Medio (M):",
+        resDistance: "Distancia (d):",
+        resMinDist: "Distancia mínima:",
+        resFootPerp: "Pie perpendicular (I):",
+        resNormMod: "Módulo normal |n̄|:",
+        resIntersect: "Punto de corte (I):",
+        resAcuteAngle: "Ángulo agudo α:",
+        resRelPos: "Posición relativa:",
+        resSecant: "Secantes",
+        resCoincident: "Coincidentes",
+        resParallel: "Paralelas",
+        resConstDist: "Distancia constante:",
+        resCommNorm: "Vector normal común:",
+
+        triVertices: "Vértices del Triángulo",
+        triDragInstr: "Arrastra directamente los vértices <b>A, B o C</b> en el lienzo.",
+        triCenters: "Centros Geométricos",
+        triCircumcenter: "Circuncentro",
+        triCircumDesc: "(Mediatrices)",
+        triCentroid: "Baricentro",
+        triCentroidDesc: "(Medianas / C.M.)",
+        triOrthocenter: "Ortocentro",
+        triOrthocenterDesc: "(Alturas)",
+        triIncenter: "Incentro",
+        triIncenterDesc: "(Bisectrices)",
+        triProperties: "Propiedades del Triángulo",
+        triAreaDet: "Área (determinante):",
+        triPerimeter: "Perímetro:",
+        lblVertexA: "Vértice A",
+        lblVertexB: "Vértice B",
+        lblVertexC: "Vértice C",
+
+        mathPanelTitle: "Desarrollo y Resolución de Sistemas",
+        mathSideEqs: "Ecuaciones de los Lados",
+        mathSideAB: "Lado AB",
+        mathSideBC: "Lado BC",
+        mathSideCA: "Lado CA",
+        mathCircum: "Circuncentro (Mediatrices)",
+        mathOrtho: "Ortocentro (Alturas)",
+        mathCentroid: "Baricentro (Medianas)",
+        mathIncenter: "Incentro (Bisectrices)",
+        mathAreaFormula: "Área del Triángulo (16.3 Coordenadas de Vértices)",
+        theoFormula: "Fórmula Teórica",
+        paramVals: "Valores Paramétricos"
+      },
+      en: {
+        title: "A.2. Lines in the Plane",
+        shortTitle: "Lines in the Plane",
+        footer: "© 2026 Area of Mechanics of Continuous Media and Theory of Structures. Institute of Technology. San Pablo-CEU University. v.1.0 September 2026",
+        tabEquations: "1. Equations",
+        tabRelations: "2. Distances & Intersections",
+        tabTriangles: "3. Triangles & Centers",
+
+        eqTypeTitle: "Equation Form",
+        eqFormulas: "Formulas",
+        eqParams: "Adjustable Parameters",
+        eqProperties: "Geometric Properties",
+        optVector: "1. Vector Equation",
+        optParametric: "2. Parametric Equations",
+        optContinuous: "3. Continuous (Symmetric)",
+        optImplicit: "4. Implicit (General) Form",
+        optExplicit: "5. Explicit (Slope-Intercept)",
+        optPointSlope: "6. Point-Slope Form",
+        optPerpendicular: "7. Line Through Point, Perp. to Given Line",
+        optTwoPoints: "8. Line Through Two Points",
+
+        explExplicit: "Slope <b>m</b> describes tilt and direction; <b>n</b> is the y-intercept (0, n).",
+        explVector: "Starting from known point <b>p̄</b>, add multiples of direction vector <b>d̄</b> to sweep the line.",
+        explParametric: "Separates coordinates into independent motions parameterized by <i>t</i> (time).",
+        explContinuous: "Obtained by isolating parameter <i>t</i> in both coordinate equations and equating them.",
+        explImplicit: "Normal vector <b>n̄ = (A, B)</b> is perpendicular; <b>d̄ = (-B, A)</b> is parallel to the line.",
+        explPointSlope: "Directly writes the line equation when given a specific point and slope.",
+        explPerpendicular: "The new line passes through P with perpendicular slope m' = -1/m relative to the base line.",
+        explTwoPoints: "Constructs the direction vector by subtracting coordinates of both known points.",
+
+        lblSlope: "Slope (m)",
+        lblIntercept: "y-intercept (n)",
+        lblBaseSlope: "Base Slope (m)",
+        lblPointP: "Known Point P (Xp, Yp)",
+        lblVectorD: "Direction Vector d̄ (Dx, Dy)",
+        lblParamT: "Parameter t (path position)",
+        lblCoefA: "Coefficient A",
+        lblCoefB: "Coefficient B",
+        lblCoefC: "Constant Term C",
+        lblPointXp: "Point Xp",
+        lblPointYp: "Point Yp",
+        lblPointQ: "Second Point Q (Xq, Yq)",
+
+        propDirVec: "Direction Vector:",
+        propNormVec: "Normal Vector:",
+        propSlope: "Slope (m):",
+        propPerpSlope: "Perp. Slope (m'):",
+        propAngle: "Inclination Angle:",
+        lblVertical: "∞ (Vertical)",
+
+        relTypeTitle: "Geometric Relation",
+        relParams: "Parameters",
+        relAnalysis: "Computation & Procedure",
+        opt9: "9. Intersection of Two Lines",
+        opt10: "10. Intersection of a Line & Its Perpendicular",
+        opt11: "11. Midpoint of a Segment",
+        opt12: "12. Distance Between Two Points",
+        opt13: "13. Distance From a Point to a Line",
+        opt14: "14. Angle Between Two Lines",
+        opt161: "16.1 Distance Between Two Parallel Lines",
+        opt162: "16.2 Bisector of the Angle Between Lines",
+
+        lblLineR: "Line r",
+        lblPointExt: "Point P",
+        lblLineR1: "Line r",
+        lblLineR2: "Line s",
+        lblCommonNormal: "Common Normal Coefficients (A, B)",
+        lblTermsC: "Constant Terms",
+
+        resMidpoint: "Midpoint (M):",
+        resDistance: "Distance (d):",
+        resMinDist: "Minimum Distance:",
+        resFootPerp: "Foot of Perpendicular (I):",
+        resNormMod: "Normal Magnitude |n̄|:",
+        resIntersect: "Intersection Point (I):",
+        resAcuteAngle: "Acute Angle α:",
+        resRelPos: "Relative Position:",
+        resSecant: "Intersecting (Secant)",
+        resCoincident: "Coincident",
+        resParallel: "Parallel",
+        resConstDist: "Constant Distance:",
+        resCommNorm: "Common Normal Vector:",
+
+        triVertices: "Triangle Vertices",
+        triDragInstr: "Drag vertices <b>A, B or C</b> directly on the canvas.",
+        triCenters: "Visible Centers",
+        triCircumcenter: "Circumcenter",
+        triCircumDesc: "(Perp. Bisectors)",
+        triCentroid: "Centroid / Barycenter",
+        triCentroidDesc: "(Medians / C.M.)",
+        triOrthocenter: "Orthocenter",
+        triOrthocenterDesc: "(Altitudes)",
+        triIncenter: "Incenter",
+        triIncenterDesc: "(Angle Bisectors)",
+        triProperties: "Triangle Properties",
+        triAreaDet: "Area (determinant):",
+        triPerimeter: "Perimeter:",
+        lblVertexA: "Vertex A",
+        lblVertexB: "Vertex B",
+        lblVertexC: "Vertex C",
+
+        mathPanelTitle: "Development & Systems Resolution",
+        mathSideEqs: "Side Equations",
+        mathSideAB: "Side AB",
+        mathSideBC: "Side BC",
+        mathSideCA: "Side CA",
+        mathCircum: "Circumcenter (Perp. Bisectors)",
+        mathOrtho: "Orthocenter (Altitudes)",
+        mathCentroid: "Centroid (Medians)",
+        mathIncenter: "Incenter (Angle Bisectors)",
+        mathAreaFormula: "Triangle Area (16.3 From Vertices' Coordinates)",
+        theoFormula: "Theoretical Formula",
+        paramVals: "Parametric Values"
+      }
+    };
+
+    function App() {
+      const [lang, setLang] = useState('es');
+      const [currentTab, setCurrentTab] = useState('equations');
+      const [currentEqType, setCurrentEqType] = useState('vector');
+
+      const [eqParams, setEqParams] = useState({
+        xp: 2, yp: 1, dx: 3, dy: 2,
+        m: 0.67, n: -0.33,
+        A: 2, B: -3, C: -1,
+        xq: 5, yq: 3, t: 1.0
+      });
+
+      const [metricParams, setMetricParams] = useState({
+        mode: '9',
+        A: 3, B: -4, C: -5,
+        A1: 3, B1: -4, C1: -5,
+        A2: 1, B2: 2, C2: -3,
+        m: 2, n: -1,
+        mr: 1, nr: 2,
+        ms: -0.5, ns: -1,
+        P: { x: 3, y: 4 },
+        Q: { x: -1, y: 1 }
+      });
+
+      const [triangleParams, setTriangleParams] = useState({
+        A: { x: -3, y: -2 },
+        B: { x: 5, y: -1 },
+        C: { x: 1, y: 4 },
+        showCircumcenter: true,
+        showIncenter: true,
+        showOrthocenter: true,
+        showCentroid: true
+      });
+
+      const canvasRef = useRef(null);
+      const viewState = useRef({
+        scale: 40,
+        origin: { x: 0, y: 0 },
+        isDragging: false,
+        dragStart: { x: 0, y: 0 },
+        draggedElement: null
+      });
+
+      const txt = translations[lang];
+
+      const r = (num) => (Math.abs(num) < 1e-9 ? 0 : Number(num.toFixed(2)));
+
+      const toScreen = (x, y) => ({
+        x: viewState.current.origin.x + x * viewState.current.scale,
+        y: viewState.current.origin.y - y * viewState.current.scale
+      });
+
+      const toWorld = (px, py) => ({
+        x: (px - viewState.current.origin.x) / viewState.current.scale,
+        y: -(py - viewState.current.origin.y) / viewState.current.scale
+      });
+
+      const zoom = (factor) => {
+        viewState.current.scale = Math.max(12, Math.min(160, viewState.current.scale * factor));
+        renderCanvas();
+      };
+
+      const resetView = () => {
+        const c = canvasRef.current;
+        if (!c) return;
+        viewState.current.origin = { x: c.width / 2, y: c.height / 2 };
+        viewState.current.scale = 40;
+        renderCanvas();
+      };
+
+      // Synchronizers
+      const syncFromExplicit = (mVal, nVal) => {
+        setEqParams(prev => {
+          const m = mVal !== undefined ? mVal : prev.m;
+          const n = nVal !== undefined ? nVal : prev.n;
+          return {
+            ...prev,
+            m, n,
+            xp: 0, yp: n,
+            dx: 1, dy: m,
+            A: m, B: -1, C: n
+          };
+        });
+      };
+
+      const syncFromPointVector = (newP, newD) => {
+        setEqParams(prev => {
+          const xp = newP && newP.x !== undefined ? newP.x : prev.xp;
+          const yp = newP && newP.y !== undefined ? newP.y : prev.yp;
+          let dx = newD && newD.x !== undefined ? newD.x : prev.dx;
+          let dy = newD && newD.y !== undefined ? newD.y : prev.dy;
+          if (dx === 0 && dy === 0) dy = 1;
+
+          const A = dy;
+          const B = -dx;
+          const C = -(A * xp + B * yp);
+          let m = prev.m;
+          let n = prev.n;
+          if (B !== 0) {
+            m = -A / B;
+            n = -C / B;
+          }
+          return { ...prev, xp, yp, dx, dy, A, B, C, m, n };
+        });
+      };
+
+      const syncFromImplicit = (newA, newB, newC) => {
+        setEqParams(prev => {
+          let A = newA !== undefined ? newA : prev.A;
+          let B = newB !== undefined ? newB : prev.B;
+          const C = newC !== undefined ? newC : prev.C;
+          if (A === 0 && B === 0) A = 1;
+
+          const dx = -B;
+          const dy = A;
+          let xp = prev.xp;
+          let yp = prev.yp;
+          let m = prev.m;
+          let n = prev.n;
+
+          if (B !== 0) {
+            xp = 0;
+            yp = -C / B;
+            m = -A / B;
+            n = -C / B;
+          } else {
+            xp = -C / A;
+            yp = 0;
+          }
+          return { ...prev, A, B, C, dx, dy, xp, yp, m, n };
+        });
+      };
+
+      const syncFromPointSlope = (xpVal, ypVal, mVal) => {
+        setEqParams(prev => {
+          const xp = xpVal !== undefined ? xpVal : prev.xp;
+          const yp = ypVal !== undefined ? ypVal : prev.yp;
+          const m = mVal !== undefined ? mVal : prev.m;
+          const dx = 1;
+          const dy = m;
+          const n = yp - m * xp;
+          const A = m;
+          const B = -1;
+          const C = n;
+          return { ...prev, xp, yp, m, n, dx, dy, A, B, C };
+        });
+      };
+
+      const syncFromPerpendicular = (xpVal, ypVal, mVal) => {
+        setEqParams(prev => {
+          const xp = xpVal !== undefined ? xpVal : prev.xp;
+          const yp = ypVal !== undefined ? ypVal : prev.yp;
+          const m = mVal !== undefined ? (mVal === 0 ? 0.01 : mVal) : prev.m;
+          const m_new = -1 / m;
+          const dx = 1;
+          const dy = m_new;
+          const n = yp - m_new * xp;
+          const A = m_new;
+          const B = -1;
+          const C = n;
+          return { ...prev, xp, yp, m, n, dx, dy, A, B, C };
+        });
+      };
+
+      const syncFromTwoPoints = (pX, pY, qX, qY) => {
+        setEqParams(prev => {
+          const xp = pX !== undefined ? pX : prev.xp;
+          const yp = pY !== undefined ? pY : prev.yp;
+          const xq = qX !== undefined ? qX : prev.xq;
+          const yq = qY !== undefined ? qY : prev.yq;
+          let dx = xq - xp;
+          let dy = yq - yp;
+          if (dx === 0 && dy === 0) dy = 1;
+          const A = dy;
+          const B = -dx;
+          const C = -(A * xp + B * yp);
+          let m = prev.m;
+          let n = prev.n;
+          if (B !== 0) {
+            m = -A / B;
+            n = -C / B;
+          }
+          return { ...prev, xp, yp, xq, yq, dx, dy, A, B, C, m, n };
+        });
+      };
+
+      // Canvas Drawing Operations
+      const drawGrid = (ctx, c) => {
+        const step = viewState.current.scale;
+        const orig = viewState.current.origin;
+        const x0 = orig.x % step;
+        const y0 = orig.y % step;
+
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1;
+        for (let x = x0; x < c.width; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, c.height); ctx.stroke();
+        }
+        for (let y = y0; y < c.height; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(c.width, y); ctx.stroke();
+        }
+
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(orig.x, 0); ctx.lineTo(orig.x, c.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, orig.y); ctx.lineTo(c.width, orig.y); ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        const minX = Math.floor(-orig.x / step);
+        const maxX = Math.ceil((c.width - orig.x) / step);
+        for (let i = minX; i <= maxX; i++) {
+          if (i === 0) continue;
+          const p = toScreen(i, 0);
+          ctx.fillText(i, p.x, p.y + 4);
+        }
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const minY = Math.floor((orig.y - c.height) / step);
+        const maxY = Math.ceil(orig.y / step);
+        for (let i = minY; i <= maxY; i++) {
+          if (i === 0) continue;
+          const p = toScreen(0, i);
+          ctx.fillText(i, p.x - 6, p.y);
+        }
+      };
+
+      const drawLineEquation = (ctx, c, A, B, C, color = '#2563eb', lineWidth = 2.5, isDashed = false) => {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        if (isDashed) ctx.setLineDash([6, 6]);
+
+        const orig = viewState.current.origin;
+        const scale = viewState.current.scale;
+        const bounds = {
+          minX: (0 - orig.x) / scale,
+          maxX: (c.width - orig.x) / scale,
+          minY: (orig.y - c.height) / scale,
+          maxY: orig.y / scale
+        };
+
+        const pts = [];
+        if (Math.abs(B) > 1e-6) {
+          pts.push({ x: bounds.minX, y: (-C - A * bounds.minX) / B });
+          pts.push({ x: bounds.maxX, y: (-C - A * bounds.maxX) / B });
+        } else if (Math.abs(A) > 1e-6) {
+          const xVal = -C / A;
+          pts.push({ x: xVal, y: bounds.minY });
+          pts.push({ x: xVal, y: bounds.maxY });
+        }
+
+        if (pts.length >= 2) {
+          const p1 = toScreen(pts[0].x, pts[0].y);
+          const p2 = toScreen(pts[1].x, pts[1].y);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      const drawPoint = (ctx, x, y, label = '', color = '#1e3a8a', radius = 5) => {
+        const p = toScreen(x, y);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        if (label) {
+          ctx.fillStyle = color;
+          ctx.font = 'bold 12px sans-serif';
+          ctx.fillText(label, p.x + 8, p.y - 8);
+        }
+      };
+
+      const drawVector = (ctx, x, y, dx, dy, color = '#059669', label = '') => {
+        const p1 = toScreen(x, y);
+        const p2 = toScreen(x + dx, y + dy);
+
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const headLen = 10;
+        ctx.beginPath();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(p2.x - headLen * Math.cos(angle - Math.PI / 6), p2.y - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(p2.x - headLen * Math.cos(angle + Math.PI / 6), p2.y - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.fill();
+
+        if (label) {
+          ctx.font = 'bold 12px sans-serif';
+          ctx.fillText(label, p2.x + 8, p2.y - 4);
+        }
+        ctx.restore();
+      };
+
+      const drawDashedSegment = (ctx, p1, p2, color = '#64748b') => {
+        const s1 = toScreen(p1.x, p1.y);
+        const s2 = toScreen(p2.x, p2.y);
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(s1.x, s1.y);
+        ctx.lineTo(s2.x, s2.y);
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      const renderCanvas = () => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        drawGrid(ctx, c);
+
+        if (currentTab === 'equations') {
+          drawLineEquation(ctx, c, eqParams.A, eqParams.B, eqParams.C, '#2563eb', 3);
+          drawPoint(ctx, eqParams.xp, eqParams.yp, 'P', '#1e40af', 6);
+
+          if (currentEqType === 'perpendicular') {
+            drawLineEquation(ctx, c, eqParams.m, -1, eqParams.n, '#94a3b8', 2, true);
+          } else {
+            drawVector(ctx, eqParams.xp, eqParams.yp, eqParams.dx, eqParams.dy, '#059669', 'd̄');
+            const normLen = Math.hypot(eqParams.A, eqParams.B);
+            if (normLen > 1e-4) {
+              drawVector(ctx, eqParams.xp, eqParams.yp, (eqParams.A / normLen) * 2, (eqParams.B / normLen) * 2, '#dc2626', 'n̄');
+            }
+          }
+
+          if (currentEqType === 'vector' || currentEqType === 'parametric') {
+            const curX = eqParams.xp + eqParams.t * eqParams.dx;
+            const curY = eqParams.yp + eqParams.t * eqParams.dy;
+            drawPoint(ctx, curX, curY, `P(t=${eqParams.t})`, '#d97706', 7);
+          }
+
+          if (currentEqType === 'twopoints') {
+            drawPoint(ctx, eqParams.xq, eqParams.yq, 'Q', '#7c3aed', 6);
+          }
+        } else if (currentTab === 'relations') {
+          if (metricParams.mode === '9' || metricParams.mode === '14') {
+            drawLineEquation(ctx, c, metricParams.mr, -1, metricParams.nr, '#2563eb', 2.5);
+            drawLineEquation(ctx, c, metricParams.ms, -1, metricParams.ns, '#059669', 2.5);
+            if (Math.abs(metricParams.mr - metricParams.ms) > 1e-6) {
+              const Xi = (metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms);
+              const Yi = metricParams.mr * Xi + metricParams.nr;
+              drawPoint(ctx, Xi, Yi, 'I', '#d97706', 7);
+            }
+          } else if (metricParams.mode === '10') {
+            const { m, n, P } = metricParams;
+            drawLineEquation(ctx, c, m, -1, n, '#2563eb', 2.5);
+            drawPoint(ctx, P.x, P.y, 'P', '#dc2626', 6);
+            const den = m + 1 / m;
+            const Xi = (P.x / m + P.y - n) / den;
+            const Yi = (P.x + m * P.y + n / m) / den;
+            drawPoint(ctx, Xi, Yi, 'I', '#059669', 5);
+            drawDashedSegment(ctx, P, { x: Xi, y: Yi }, '#dc2626');
+            drawLineEquation(ctx, c, -1 / m, -1, Yi - (-1 / m) * Xi, 'rgba(220,38,38,0.25)', 1.5, true);
+          } else if (metricParams.mode === '11' || metricParams.mode === '12') {
+            drawPoint(ctx, metricParams.P.x, metricParams.P.y, 'P', '#1e40af', 6);
+            drawPoint(ctx, metricParams.Q.x, metricParams.Q.y, 'Q', '#7c3aed', 6);
+            const Mx = (metricParams.P.x + metricParams.Q.x) / 2;
+            const My = (metricParams.P.y + metricParams.Q.y) / 2;
+            drawDashedSegment(ctx, metricParams.P, metricParams.Q, '#94a3b8');
+            if (metricParams.mode === '11') drawPoint(ctx, Mx, My, 'M', '#d97706', 6);
+          } else if (metricParams.mode === '13') {
+            const { A1, B1, C1, P } = metricParams;
+            drawLineEquation(ctx, c, A1, B1, C1, '#2563eb', 2.5);
+            drawPoint(ctx, P.x, P.y, 'P', '#dc2626', 6);
+            const tVal = (A1 * P.x + B1 * P.y + C1) / (A1 * A1 + B1 * B1 || 1);
+            const Ix = P.x - tVal * A1, Iy = P.y - tVal * B1;
+            drawPoint(ctx, Ix, Iy, 'I', '#059669', 5);
+            drawDashedSegment(ctx, P, { x: Ix, y: Iy }, '#dc2626');
+          } else if (metricParams.mode === '16.1') {
+            drawLineEquation(ctx, c, metricParams.A, metricParams.B, metricParams.C1, '#2563eb', 2.5);
+            drawLineEquation(ctx, c, metricParams.A, metricParams.B, metricParams.C2, '#059669', 2.5);
+          } else if (metricParams.mode === '16.2') {
+            const { A1, B1, C1, A2, B2, C2 } = metricParams;
+            drawLineEquation(ctx, c, A1, B1, C1, '#2563eb', 2);
+            drawLineEquation(ctx, c, A2, B2, C2, '#059669', 2);
+            const n1 = Math.hypot(A1, B1), n2 = Math.hypot(A2, B2);
+            drawLineEquation(ctx, c, A1 / n1 - A2 / n2, B1 / n1 - B2 / n2, C1 / n1 - C2 / n2, '#dc2626', 2, true);
+            drawLineEquation(ctx, c, A1 / n1 + A2 / n2, B1 / n1 + B2 / n2, C1 / n1 + C2 / n2, '#d97706', 2, true);
+          }
+        } else if (currentTab === 'triangles') {
+          const { A, B, C, showCircumcenter, showIncenter, showOrthocenter, showCentroid } = triangleParams;
+          const pA = toScreen(A.x, A.y);
+          const pB = toScreen(B.x, B.y);
+          const pC = toScreen(C.x, C.y);
+
+          ctx.save();
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+          ctx.beginPath();
+          ctx.moveTo(pA.x, pA.y);
+          ctx.lineTo(pB.x, pB.y);
+          ctx.lineTo(pC.x, pC.y);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.strokeStyle = '#1e3a8a';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.restore();
+
+          drawPoint(ctx, A.x, A.y, 'A', '#1e3a8a', 6);
+          drawPoint(ctx, B.x, B.y, 'B', '#1e3a8a', 6);
+          drawPoint(ctx, C.x, C.y, 'C', '#1e3a8a', 6);
+
+          const Mab = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+          const Mbc = { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 };
+          const Mca = { x: (C.x + A.x) / 2, y: (C.y + A.y) / 2 };
+
+          if (showCentroid) {
+            drawDashedSegment(ctx, A, Mbc, '#dc2626');
+            drawDashedSegment(ctx, B, Mca, '#dc2626');
+            drawDashedSegment(ctx, C, Mab, '#dc2626');
+            const G = { x: (A.x + B.x + C.x) / 3, y: (A.y + B.y + C.y) / 3 };
+            drawPoint(ctx, G.x, G.y, 'G', '#dc2626', 7);
+          }
+
+          if (showCircumcenter) {
+            const dAB = { x: B.x - A.x, y: B.y - A.y };
+            const dBC = { x: C.x - B.x, y: C.y - B.y };
+            const A1 = dAB.x, B1 = dAB.y, C1 = -(dAB.x * Mab.x + dAB.y * Mab.y);
+            const A2 = dBC.x, B2 = dBC.y, C2 = -(dBC.x * Mbc.x + dBC.y * Mbc.y);
+            const det = A1 * B2 - A2 * B1;
+
+            if (Math.abs(det) > 1e-6) {
+              const O = { x: (B1 * C2 - B2 * C1) / det, y: (A2 * C1 - A1 * C2) / det };
+              drawLineEquation(ctx, c, A1, B1, C1, 'rgba(5, 150, 105, 0.45)', 1.5, true);
+              drawLineEquation(ctx, c, A2, B2, C2, 'rgba(5, 150, 105, 0.45)', 1.5, true);
+              drawPoint(ctx, O.x, O.y, 'O', '#059669', 7);
+
+              const R = Math.hypot(A.x - O.x, A.y - O.y);
+              const pO = toScreen(O.x, O.y);
+              ctx.save();
+              ctx.strokeStyle = '#059669';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(pO.x, pO.y, R * viewState.current.scale, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+
+          if (showOrthocenter) {
+            const A1 = C.x - B.x, B1 = C.y - B.y, C1 = -(A1 * A.x + B1 * A.y);
+            const A2 = A.x - C.x, B2 = A.y - C.y, C2 = -(A2 * B.x + B2 * B.y);
+            const det = A1 * B2 - A2 * B1;
+
+            if (Math.abs(det) > 1e-6) {
+              const H = { x: (B1 * C2 - B2 * C1) / det, y: (A2 * C1 - A1 * C2) / det };
+              drawLineEquation(ctx, c, A1, B1, C1, 'rgba(217, 119, 6, 0.45)', 1.5, true);
+              drawLineEquation(ctx, c, A2, B2, C2, 'rgba(217, 119, 6, 0.45)', 1.5, true);
+              drawPoint(ctx, H.x, H.y, 'H', '#d97706', 7);
+            }
+          }
+
+          if (showIncenter) {
+            const a = Math.hypot(B.x - C.x, B.y - C.y);
+            const b = Math.hypot(A.x - C.x, A.y - C.y);
+            const cLen = Math.hypot(A.x - B.x, A.y - B.y);
+            const perim = a + b + cLen;
+            const In = {
+              x: (a * A.x + b * B.x + cLen * C.x) / perim,
+              y: (a * A.y + b * B.y + cLen * C.y) / perim
+            };
+
+            drawDashedSegment(ctx, A, In, 'rgba(37, 99, 235, 0.6)');
+            drawDashedSegment(ctx, B, In, 'rgba(37, 99, 235, 0.6)');
+            drawDashedSegment(ctx, C, In, 'rgba(37, 99, 235, 0.6)');
+
+            drawPoint(ctx, In.x, In.y, 'I', '#2563eb', 7);
+
+            const s = perim / 2;
+            const area = 0.5 * Math.abs(A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+            const rIn = area / s;
+            const pIn = toScreen(In.x, In.y);
+
+            ctx.save();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(pIn.x, pIn.y, rIn * viewState.current.scale, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      };
+
+      useEffect(() => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const resizeObserver = new ResizeObserver((entries) => {
+          for (let entry of entries) {
+            if (entry.contentRect.width > 0) {
+              c.width = entry.contentRect.width;
+              c.height = entry.contentRect.height;
+              if (viewState.current.origin.x === 0 && viewState.current.origin.y === 0) {
+                viewState.current.origin = { x: c.width / 2, y: c.height / 2 };
+              }
+              renderCanvas();
+            }
+          }
+        });
+        resizeObserver.observe(c.parentElement);
+
+        return () => resizeObserver.disconnect();
+      }, []);
+
+      useEffect(() => {
+        renderCanvas();
+      }, [currentTab, currentEqType, eqParams, metricParams, triangleParams]);
+
+      // Mouse & Wheel handling
+      const handleMouseDown = (e) => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const rect = c.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const mouseW = toWorld(mouseX, mouseY);
+
+        if (currentTab === 'triangles') {
+          if (Math.hypot(mouseW.x - triangleParams.A.x, mouseW.y - triangleParams.A.y) < 0.6) { viewState.current.draggedElement = 'triA'; return; }
+          if (Math.hypot(mouseW.x - triangleParams.B.x, mouseW.y - triangleParams.B.y) < 0.6) { viewState.current.draggedElement = 'triB'; return; }
+          if (Math.hypot(mouseW.x - triangleParams.C.x, mouseW.y - triangleParams.C.y) < 0.6) { viewState.current.draggedElement = 'triC'; return; }
+        } else if (currentTab === 'relations') {
+          if (metricParams.mode === '10' && Math.hypot(mouseW.x - metricParams.P.x, mouseW.y - metricParams.P.y) < 0.6) { viewState.current.draggedElement = 'metricP'; return; }
+          if (metricParams.mode === '11' || metricParams.mode === '12') {
+            if (Math.hypot(mouseW.x - metricParams.P.x, mouseW.y - metricParams.P.y) < 0.6) { viewState.current.draggedElement = 'metricP'; return; }
+            if (Math.hypot(mouseW.x - metricParams.Q.x, mouseW.y - metricParams.Q.y) < 0.6) { viewState.current.draggedElement = 'metricQ'; return; }
+          }
+          if (metricParams.mode === '13' && Math.hypot(mouseW.x - metricParams.P.x, mouseW.y - metricParams.P.y) < 0.6) { viewState.current.draggedElement = 'metricP'; return; }
+        } else if (currentTab === 'equations') {
+          if (Math.hypot(mouseW.x - eqParams.xp, mouseW.y - eqParams.yp) < 0.6) { viewState.current.draggedElement = 'eqP'; return; }
+          if (currentEqType === 'twopoints' && Math.hypot(mouseW.x - eqParams.xq, mouseW.y - eqParams.yq) < 0.6) { viewState.current.draggedElement = 'eqQ'; return; }
+        }
+
+        viewState.current.isDragging = true;
+        viewState.current.dragStart = { x: mouseX, y: mouseY };
+      };
+
+      const handleMouseMove = (e) => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const rect = c.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const mouseW = toWorld(mouseX, mouseY);
+
+        if (viewState.current.draggedElement) {
+          const d = viewState.current.draggedElement;
+          if (d === 'triA') {
+            setTriangleParams(prev => ({ ...prev, A: { x: Number(mouseW.x.toFixed(1)), y: Number(mouseW.y.toFixed(1)) } }));
+          } else if (d === 'triB') {
+            setTriangleParams(prev => ({ ...prev, B: { x: Number(mouseW.x.toFixed(1)), y: Number(mouseW.y.toFixed(1)) } }));
+          } else if (d === 'triC') {
+            setTriangleParams(prev => ({ ...prev, C: { x: Number(mouseW.x.toFixed(1)), y: Number(mouseW.y.toFixed(1)) } }));
+          } else if (d === 'metricP') {
+            setMetricParams(prev => ({ ...prev, P: { x: Number(mouseW.x.toFixed(1)), y: Number(mouseW.y.toFixed(1)) } }));
+          } else if (d === 'metricQ') {
+            setMetricParams(prev => ({ ...prev, Q: { x: Number(mouseW.x.toFixed(1)), y: Number(mouseW.y.toFixed(1)) } }));
+          } else if (d === 'eqP') {
+            const xp = Number(mouseW.x.toFixed(1));
+            const yp = Number(mouseW.y.toFixed(1));
+            if (currentEqType === 'perpendicular') syncFromPerpendicular(xp, yp);
+            else syncFromPointVector({ x: xp, y: yp });
+          } else if (d === 'eqQ') {
+            const xq = Number(mouseW.x.toFixed(1));
+            const yq = Number(mouseW.y.toFixed(1));
+            syncFromTwoPoints(undefined, undefined, xq, yq);
+          }
+          return;
+        }
+
+        if (viewState.current.isDragging) {
+          viewState.current.origin.x += (mouseX - viewState.current.dragStart.x);
+          viewState.current.origin.y += (mouseY - viewState.current.dragStart.y);
+          viewState.current.dragStart = { x: mouseX, y: mouseY };
+          renderCanvas();
+        }
+      };
+
+      const handleMouseUp = () => {
+        viewState.current.isDragging = false;
+        viewState.current.draggedElement = null;
+      };
+
+      const handleWheel = (e) => {
+        e.preventDefault();
+        zoom(e.deltaY < 0 ? 1.1 : 0.9);
+      };
+
+      const formatLineEq = (A, B, C) => {
+        let res = "";
+        if (Math.abs(A) > 1e-4) res += `${r(A)}x `;
+        if (Math.abs(B) > 1e-4) {
+          if (res.length > 0 && B > 0) res += "+ ";
+          else if (res.length > 0 && B < 0) res += "- ";
+          else if (B < 0) res += "-";
+          res += `${Math.abs(r(B))}y `;
+        }
+        if (Math.abs(C) > 1e-4) {
+          if (res.length > 0 && C > 0) res += "+ ";
+          else if (res.length > 0 && C < 0) res += "- ";
+          else if (C < 0) res += "-";
+          res += `${Math.abs(r(C))} `;
+        }
+        return res === "" ? "0 = 0" : res.trim() + " = 0";
+      };
+
+      // Sliders Helper
+      const renderSlider = (label, min, max, val, step, onChange) => (
+        <div className="control-group">
+          <div className="control-header"><span>{label}</span></div>
+          <div className="control-row">
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={val}
+              onChange={(e) => onChange(parseFloat(e.target.value))}
+            />
+            <input
+              type="number"
+              step={step}
+              value={val}
+              onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            />
+          </div>
+        </div>
+      );
+
+      // Formulas content generator
+      const getEquationFormulas = () => {
+        let genHtml = null;
+        let html = null;
+        let explanation = "";
+
+        if (currentEqType === 'explicit') {
+          genHtml = <div className="formula-row"><i>y</i> = <i>m</i> · <i>x</i> + <i>n</i></div>;
+          const sign = eqParams.n >= 0 ? "+ " : "- ";
+          html = <div className="formula-row"><i>y</i> = <b>{r(eqParams.m)}</b> · <i>x</i> {sign} <b>{Math.abs(r(eqParams.n))}</b></div>;
+          explanation = txt.explExplicit;
+        } else if (currentEqType === 'vector') {
+          genHtml = <div className="formula-row">r̄ = p̄ + <i>t</i> · d̄</div>;
+          html = <div className="formula-row">(<i>x</i>, <i>y</i>) = ({r(eqParams.xp)}, {r(eqParams.yp)}) + <i>t</i> · ({r(eqParams.dx)}, {r(eqParams.dy)})</div>;
+          explanation = txt.explVector;
+        } else if (currentEqType === 'parametric') {
+          genHtml = (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className="formula-row"><i>x</i> = <i>X<sub>p</sub></i> + <i>t</i> · <i>D<sub>x</sub></i></div>
+              <div className="formula-row"><i>y</i> = <i>Y<sub>p</sub></i> + <i>t</i> · <i>D<sub>y</sub></i></div>
+            </div>
+          );
+          const sX = eqParams.dx >= 0 ? "+" : "-";
+          const sY = eqParams.dy >= 0 ? "+" : "-";
+          html = (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className="formula-row"><i>x</i> = {r(eqParams.xp)} {sX} {Math.abs(r(eqParams.dx))} · <i>t</i></div>
+              <div className="formula-row"><i>y</i> = {r(eqParams.yp)} {sY} {Math.abs(r(eqParams.dy))} · <i>t</i></div>
+            </div>
+          );
+          explanation = txt.explParametric;
+        } else if (currentEqType === 'continuous') {
+          genHtml = (
+            <div className="formula-row">
+              <div className="frac"><span className="frac-num"><i>x</i> &minus; <i>X<sub>p</sub></i></span><span className="frac-den"><i>D<sub>x</sub></i></span></div>
+              <span>=</span>
+              <div className="frac"><span className="frac-num"><i>y</i> &minus; <i>Y<sub>p</sub></i></span><span className="frac-den"><i>D<sub>y</sub></i></span></div>
+            </div>
+          );
+          html = (
+            <div className="formula-row">
+              <div className="frac"><span className="frac-num"><i>x</i> &minus; ({r(eqParams.xp)})</span><span class="frac-den">{r(eqParams.dx)}</span></div>
+              <span>=</span>
+              <div className="frac"><span className="frac-num"><i>y</i> &minus; ({r(eqParams.yp)})</span><span className="frac-den">{r(eqParams.dy)}</span></div>
+            </div>
+          );
+          explanation = txt.explContinuous;
+        } else if (currentEqType === 'implicit') {
+          genHtml = <div className="formula-row"><i>A·x</i> + <i>B·y</i> + <i>C</i> = 0</div>;
+          const sB = eqParams.B >= 0 ? "+" : "-";
+          const sC = eqParams.C >= 0 ? "+" : "-";
+          html = <div className="formula-row"><b>{r(eqParams.A)}</b>·<i>x</i> {sB} <b>{Math.abs(r(eqParams.B))}</b>·<i>y</i> {sC} <b>{Math.abs(r(eqParams.C))}</b> = 0</div>;
+          explanation = txt.explImplicit;
+        } else if (currentEqType === 'pointslope') {
+          genHtml = <div className="formula-row"><i>y</i> &minus; <i>Y<sub>p</sub></i> = <i>m</i> · (<i>x</i> &minus; <i>X<sub>p</sub></i>)</div>;
+          html = <div className="formula-row"><i>y</i> &minus; ({r(eqParams.yp)}) = <b>{r(eqParams.m)}</b> · (<i>x</i> &minus; ({r(eqParams.xp)}))</div>;
+          explanation = txt.explPointSlope;
+        } else if (currentEqType === 'perpendicular') {
+          genHtml = (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className="formula-row"><i>m'</i> = &minus; <div className="frac"><span className="frac-num">1</span><span className="frac-den"><i>m</i></span></div></div>
+              <div className="formula-row"><i>y</i> &minus; <i>Y<sub>p</sub></i> = &minus; <div className="frac"><span className="frac-num">1</span><span className="frac-den"><i>m</i></span></div> · (<i>x</i> &minus; <i>X<sub>p</sub></i>)</div>
+            </div>
+          );
+          html = <div className="formula-row"><i>y</i> &minus; ({r(eqParams.yp)}) = <b>{r(-1 / eqParams.m)}</b> · (<i>x</i> &minus; ({r(eqParams.xp)}))</div>;
+          explanation = txt.explPerpendicular;
+        } else if (currentEqType === 'twopoints') {
+          genHtml = (
+            <div className="formula-row">
+              <div className="frac"><span className="frac-num"><i>x</i> &minus; <i>X<sub>p</sub></i></span><span className="frac-den"><i>X<sub>q</sub></i> &minus; <i>X<sub>p</sub></i></span></div>
+              <span>=</span>
+              <div className="frac"><span className="frac-num"><i>y</i> &minus; <i>Y<sub>p</sub></i></span><span className="frac-den"><i>Y<sub>q</sub></i> &minus; <i>Y<sub>p</sub></i></span></div>
+            </div>
+          );
+          html = (
+            <div className="formula-row">
+              <div className="frac"><span className="frac-num"><i>x</i> &minus; ({r(eqParams.xp)})</span><span className="frac-den">{r(eqParams.xq)} &minus; ({r(eqParams.xp)})</span></div>
+              <span>=</span>
+              <div className="frac"><span className="frac-num"><i>y</i> &minus; ({r(eqParams.yp)})</span><span className="frac-den">{r(eqParams.yq)} &minus; ({r(eqParams.yp)})</span></div>
+            </div>
+          );
+          explanation = txt.explTwoPoints;
+        }
+
+        return { genHtml, html, explanation };
+      };
+
+      // Relations Calculations Generator
+      const getRelationsData = () => {
+        let proc = "";
+        let formHtml = null;
+        let tableRows = [];
+
+        if (metricParams.mode === '9') {
+          proc = "Se igualan ambas ecuaciones explícitas mr·x + nr = ms·x + ns y se despeja Xi. Luego se sustituye en cualquiera de las rectas para hallar Yi.";
+          formHtml = (
+            <div className="formula-row">
+              <i>I</i> = (
+              <div className="frac"><span className="frac-num"><i>n<sub>s</sub></i> &minus; <i>n<sub>r</sub></i></span><span className="frac-den"><i>m<sub>r</sub></i> &minus; <i>m<sub>s</sub></i></span></div>
+              ,
+              <div className="frac"><span className="frac-num"><i>m<sub>r</sub>n<sub>s</sub></i> &minus; <i>m<sub>s</sub>n<sub>r</sub></i></span><span className="frac-den"><i>m<sub>r</sub></i> &minus; <i>m<sub>s</sub></i></span></div>
+              )
+            </div>
+          );
+          const { mr, nr, ms, ns } = metricParams;
+          if (Math.abs(mr - ms) > 1e-6) {
+            const Xi = (ns - nr) / (mr - ms);
+            const Yi = (mr * ns - ms * nr) / (mr - ms);
+            tableRows.push(
+              <tr key="9">
+                <td>{txt.resIntersect}</td>
+                <td><b>({r(Xi)}, {r(Yi)})</b></td>
+              </tr>
+            );
+          } else {
+            tableRows.push(
+              <tr key="9-co">
+                <td>{txt.resRelPos}</td>
+                <td><b>{Math.abs(nr - ns) < 1e-6 ? txt.resCoincident : txt.resParallel}</b></td>
+              </tr>
+            );
+          }
+        } else if (metricParams.mode === '10') {
+          proc = "El pie de la perpendicular I es la intersección entre la recta original y = mx + n y la recta ortogonal que pasa por P con pendiente m' = -1/m.";
+          formHtml = (
+            <div className="formula-row" style={{ fontSize: '0.95em' }}>
+              <i>X<sub>i</sub></i> = <div className="frac"><span className="frac-num"><i>X<sub>p</sub></i>/<i>m</i> + <i>Y<sub>p</sub></i> &minus; <i>n</i></span><span className="frac-den"><i>m</i> + 1/<i>m</i></span></div>
+              ,
+              <i>Y<sub>i</sub></i> = <div className="frac"><span className="frac-num"><i>X<sub>p</sub></i> + <i>mY<sub>p</sub></i> + <i>n</i>/<i>m</i></span><span className="frac-den"><i>m</i> + 1/<i>m</i></span></div>
+            </div>
+          );
+          const { m, n, P } = metricParams;
+          const den = m + (1 / m);
+          const Xi = (P.x / m + P.y - n) / den;
+          const Yi = (P.x + m * P.y + n / m) / den;
+          tableRows.push(
+            <tr key="10">
+              <td>{txt.resFootPerp}</td>
+              <td><b>({r(Xi)}, {r(Yi)})</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '11') {
+          proc = "El punto medio M es la semisuma (promedio) de las coordenadas de ambos extremos del segmento.";
+          formHtml = (
+            <div className="formula-row">
+              <i>M</i> = (
+              <div className="frac"><span className="frac-num"><i>X<sub>p</sub></i> + <i>X<sub>q</sub></i></span><span className="frac-den">2</span></div>
+              ,
+              <div className="frac"><span className="frac-num"><i>Y<sub>p</sub></i> + <i>Y<sub>q</sub></i></span><span className="frac-den">2</span></div>
+              )
+            </div>
+          );
+          const { P, Q } = metricParams;
+          tableRows.push(
+            <tr key="11">
+              <td>{txt.resMidpoint}</td>
+              <td><b>({r((P.x + Q.x) / 2)}, {r((P.y + Q.y) / 2)})</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '12') {
+          proc = "Aplicación directa del Teorema de Pitágoras sobre los incrementos horizontal y vertical entre los dos puntos.";
+          formHtml = (
+            <div className="formula-row">
+              <i>d</i> = &radic;[ (<i>X<sub>q</sub></i> &minus; <i>X<sub>p</sub></i>)<sup>2</sup> + (<i>Y<sub>q</sub></i> &minus; <i>Y<sub>p</sub></i>)<sup>2</sup> ]
+            </div>
+          );
+          const { P, Q } = metricParams;
+          tableRows.push(
+            <tr key="12">
+              <td>{txt.resDistance}</td>
+              <td><b>{r(Math.hypot(Q.x - P.x, Q.y - P.y))}</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '13') {
+          proc = "Se calcula evaluando el punto P en la forma implícita normalizada dividiendo entre el módulo del vector normal √(A² + B²).";
+          formHtml = (
+            <div className="formula-row">
+              <i>d</i> = <div className="frac"><span className="frac-num">| <i>AX<sub>p</sub></i> + <i>BY<sub>p</sub></i> + <i>C</i> |</span><span className="frac-den">&radic;(<i>A</i><sup>2</sup> + <i>B</i><sup>2</sup>)</span></div>
+            </div>
+          );
+          const { A1, B1, C1, P } = metricParams;
+          const norm = Math.hypot(A1, B1);
+          const dist = Math.abs(A1 * P.x + B1 * P.y + C1) / (norm || 1);
+          tableRows.push(
+            <tr key="13">
+              <td>{txt.resMinDist}</td>
+              <td><b>{r(dist)}</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '14') {
+          proc = "Deriva de la identidad de la tangente de la diferencia de ángulos tan(θs - θr) formada con el semieje positivo X.";
+          formHtml = (
+            <div className="formula-row">
+              tan <i>&alpha;</i> = <div className="frac"><span className="frac-num">| <i>m<sub>s</sub></i> &minus; <i>m<sub>r</sub></i> |</span><span className="frac-den">| 1 + <i>m<sub>s</sub>m<sub>r</sub></i> |</span></div>
+            </div>
+          );
+          const { mr, ms } = metricParams;
+          const num = Math.abs(ms - mr);
+          const den = 1 + ms * mr;
+          let alphaDeg = 90;
+          if (Math.abs(den) > 1e-6) alphaDeg = Math.atan(num / Math.abs(den)) * 180 / Math.PI;
+          tableRows.push(
+            <tr key="14">
+              <td>{txt.resAcuteAngle}</td>
+              <td><b>{r(alphaDeg)}°</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '16.1') {
+          proc = "La distancia entre rectas paralelas es constante; se obtiene calculando la distancia de cualquier punto de r a s.";
+          formHtml = (
+            <div className="formula-row">
+              <i>d</i> = <div className="frac"><span className="frac-num">| <i>C</i><sub>1</sub> &minus; <i>C</i><sub>2</sub> |</span><span className="frac-den">&radic;(<i>A</i><sup>2</sup> + <i>B</i><sup>2</sup>)</span></div>
+            </div>
+          );
+          const { A, B, C1, C2 } = metricParams;
+          const dist = Math.abs(C1 - C2) / (Math.hypot(A, B) || 1);
+          tableRows.push(
+            <tr key="16.1">
+              <td>{txt.resConstDist}</td>
+              <td><b>d = {r(dist)}</b></td>
+            </tr>
+          );
+        } else if (metricParams.mode === '16.2') {
+          proc = "Lugar geométrico de puntos que equidistan de ambas rectas. El signo positivo da una bisectriz y el negativo la otra ortogonal.";
+          formHtml = (
+            <div className="formula-row">
+              <div className="frac"><span className="frac-num"><i>A</i><sub>1</sub><i>x</i> + <i>B</i><sub>1</sub><i>y</i> + <i>C</i><sub>1</sub></span><span className="frac-den">&radic;(<i>A</i><sub>1</sub><sup>2</sup> + <i>B</i><sub>1</sub><sup>2</sup>)</span></div>
+              <span>= &plusmn;</span>
+              <div className="frac"><span className="frac-num"><i>A</i><sub>2</sub><i>x</i> + <i>B</i><sub>2</sub><i>y</i> + <i>C</i><sub>2</sub></span><span className="frac-den">&radic;(<i>A</i><sub>2</sub><sup>2</sup> + <i>B</i><sub>2</sub><sup>2</sup>)</span></div>
+            </div>
+          );
+          tableRows.push(
+            <tr key="16.2">
+              <td colSpan="2" style={{ color: '#059669', fontWeight: 600 }}>Dos rectas bisectrices perpendiculares entre sí</td>
+            </tr>
+          );
+        }
+
+        return { proc, formHtml, tableRows };
+      };
+
+      // Triangle Properties Generator
+      const getTriangleProperties = () => {
+        const { A, B, C, showCentroid, showCircumcenter, showOrthocenter, showIncenter } = triangleParams;
+        const area = 0.5 * Math.abs(A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+        const a = Math.hypot(B.x - C.x, B.y - C.y);
+        const b = Math.hypot(A.x - C.x, A.y - C.y);
+        const cLen = Math.hypot(A.x - B.x, A.y - B.y);
+        const perim = a + b + cLen;
+
+        const G = { x: (A.x + B.x + C.x) / 3, y: (A.y + B.y + C.y) / 3 };
+        const In = { x: (a * A.x + b * B.x + cLen * C.x) / perim, y: (a * A.y + b * B.y + cLen * C.y) / perim };
+
+        const Mab = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+        const Mbc = { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 };
+
+        const A1_circ = B.x - A.x, B1_circ = B.y - A.y, C1_circ = -(A1_circ * Mab.x + B1_circ * Mab.y);
+        const A2_circ = C.x - B.x, B2_circ = C.y - B.y, C2_circ = -(A2_circ * Mbc.x + B2_circ * Mbc.y);
+        const det_circ = A1_circ * B2_circ - A2_circ * B1_circ;
+        let O = null;
+        if (Math.abs(det_circ) > 1e-6) {
+          O = {
+            x: (B1_circ * C2_circ - B2_circ * C1_circ) / det_circ,
+            y: (A2_circ * C1_circ - A1_circ * C2_circ) / det_circ
+          };
+        }
+
+        const A1_ort = C.x - B.x, B1_ort = C.y - B.y, C1_ort = -(A1_ort * A.x + B1_ort * A.y);
+        const A2_ort = A.x - C.x, B2_ort = A.y - C.y, C2_ort = -(A2_ort * B.x + B2_ort * B.y);
+        const det_ort = A1_ort * B2_ort - A2_ort * B1_ort;
+        let H = null;
+        if (Math.abs(det_ort) > 1e-6) {
+          H = {
+            x: (B1_ort * C2_ort - B2_ort * C1_ort) / det_ort,
+            y: (A2_ort * C1_ort - A1_ort * C2_ort) / det_ort
+          };
+        }
+
+        return { area, perim, G, In, O, H, a, b, cLen };
+      };
+
+      const eqFormulaData = getEquationFormulas();
+      const relationsData = getRelationsData();
+      const triPropData = getTriangleProperties();
+
+      const angleRad = Math.atan2(eqParams.dy, eqParams.dx);
+      const angleDeg = ((angleRad * 180 / Math.PI) + 360) % 180;
+      let slopeStr = eqParams.B !== 0 ? r(-eqParams.A / eqParams.B) : txt.lblVertical;
+      if (currentEqType === 'perpendicular') slopeStr = r(-1 / eqParams.m);
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '800px', width: '100%' }}>
+          
+          {/* Header Institucional */}
+          <header className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between shadow-sm z-10 shrink-0 gap-4">
+            <div className="flex items-center gap-4 md:gap-6">
+              <img 
+                src="https://www.uspceu.com/Portals/_default/skins/uspceu-multi//assets/img/logos/Logo-CEU-Positivo.svg" 
+                alt="Logotipo USP CEU" 
+                className="h-12 w-auto object-contain rounded-md shadow-sm" 
+              />
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight hidden md:block">
+                  {txt.title}
+                </h1>
+                <h1 className="text-xl font-black text-slate-900 tracking-tight md:hidden">
+                  {txt.shortTitle || txt.title}
+                </h1>
+              </div>
+            </div>
+            
+            {/* Navegación y Selector de idioma */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 gap-1">
+                <button
+                  onClick={() => setCurrentTab('equations')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${currentTab === 'equations' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {txt.tabEquations}
+                </button>
+                <button
+                  onClick={() => setCurrentTab('relations')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${currentTab === 'relations' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {txt.tabRelations}
+                </button>
+                <button
+                  onClick={() => setCurrentTab('triangles')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${currentTab === 'triangles' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {txt.tabTriangles}
+                </button>
+              </div>
+
+              <div className="flex bg-slate-100 rounded-lg p-1 shadow-inner border border-slate-200">
+                <button 
+                  onClick={() => setLang('es')} 
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${lang === 'es' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:bg-slate-200'}`}
+                >
+                  ESP
+                </button>
+                <button 
+                  onClick={() => setLang('en')} 
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${lang === 'en' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:bg-slate-200'}`}
+                >
+                  ENG
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Área Principal */}
+          <main className="flex flex-col md:flex-row flex-1 overflow-hidden" style={{ minHeight: 'calc(100vh - 80px)' }}>
+            
+            {/* Sidebar lateral con parámetros y controles */}
+            <div className="w-full md:w-[440px] bg-white border-r border-slate-200 flex flex-col overflow-y-auto p-4 gap-4 shrink-0 shadow-sm">
+              {currentTab === 'equations' && (
+                <>
+                  <div className="card">
+                    <div className="card-title">{txt.eqTypeTitle}</div>
+                    <select value={currentEqType} onChange={(e) => setCurrentEqType(e.target.value)}>
+                      <option value="vector">{txt.optVector}</option>
+                      <option value="parametric">{txt.optParametric}</option>
+                      <option value="continuous">{txt.optContinuous}</option>
+                      <option value="implicit">{txt.optImplicit}</option>
+                      <option value="explicit">{txt.optExplicit}</option>
+                      <option value="pointslope">{txt.optPointSlope}</option>
+                      <option value="perpendicular">{txt.optPerpendicular}</option>
+                      <option value="twopoints">{txt.optTwoPoints}</option>
+                    </select>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.eqFormulas}</div>
+                    <div className="formula-display">
+                      <div style={{ width: '100%', borderBottom: '1px dashed #cbd5e1', paddingBottom: '0.5rem', marginBottom: '0.5rem', color: '#475569' }}>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', marginBottom: '2px' }}>{txt.theoFormula}</div>
+                        {eqFormulaData.genHtml}
+                      </div>
+                      <div style={{ width: '100%' }}>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: '#1e3a8a', marginBottom: '2px' }}>{txt.paramVals}</div>
+                        {eqFormulaData.html}
+                      </div>
+                    </div>
+                    <p className="instruction" dangerouslySetInnerHTML={{ __html: eqFormulaData.explanation }}></p>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.eqParams}</div>
+                    {currentEqType === 'explicit' && (
+                      <>
+                        {renderSlider(txt.lblSlope, -5, 5, eqParams.m, 0.1, (v) => syncFromExplicit(v, undefined))}
+                        {renderSlider(txt.lblIntercept, -8, 8, eqParams.n, 0.2, (v) => syncFromExplicit(undefined, v))}
+                      </>
+                    )}
+                    {currentEqType === 'perpendicular' && (
+                      <>
+                        <div className="control-header"><span>{txt.lblPointP}</span></div>
+                        {renderSlider('Xp', -8, 8, eqParams.xp, 0.5, (v) => syncFromPerpendicular(v, undefined, undefined))}
+                        {renderSlider('Yp', -8, 8, eqParams.yp, 0.5, (v) => syncFromPerpendicular(undefined, v, undefined))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblBaseSlope}</span></div>
+                        {renderSlider(txt.lblSlope, -5, 5, eqParams.m === 0 ? 1 : eqParams.m, 0.1, (v) => syncFromPerpendicular(undefined, undefined, v))}
+                      </>
+                    )}
+                    {(currentEqType === 'vector' || currentEqType === 'parametric' || currentEqType === 'continuous') && (
+                      <>
+                        <div className="control-header"><span>{txt.lblPointP}</span></div>
+                        {renderSlider('Xp', -8, 8, eqParams.xp, 0.5, (v) => syncFromPointVector({ x: v }, undefined))}
+                        {renderSlider('Yp', -8, 8, eqParams.yp, 0.5, (v) => syncFromPointVector({ y: v }, undefined))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblVectorD}</span></div>
+                        {renderSlider('Dx', -6, 6, eqParams.dx, 0.5, (v) => syncFromPointVector(undefined, { x: v }))}
+                        {renderSlider('Dy', -6, 6, eqParams.dy, 0.5, (v) => syncFromPointVector(undefined, { y: v }))}
+                        {(currentEqType === 'vector' || currentEqType === 'parametric') && (
+                          <>
+                            <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblParamT}</span></div>
+                            {renderSlider('t', -4, 4, eqParams.t, 0.1, (v) => setEqParams(prev => ({ ...prev, t: v })))}
+                          </>
+                        )}
+                      </>
+                    )}
+                    {currentEqType === 'implicit' && (
+                      <>
+                        {renderSlider(txt.lblCoefA, -6, 6, eqParams.A, 0.5, (v) => syncFromImplicit(v, undefined, undefined))}
+                        {renderSlider(txt.lblCoefB, -6, 6, eqParams.B, 0.5, (v) => syncFromImplicit(undefined, v, undefined))}
+                        {renderSlider(txt.lblCoefC, -10, 10, eqParams.C, 0.5, (v) => syncFromImplicit(undefined, undefined, v))}
+                      </>
+                    )}
+                    {currentEqType === 'pointslope' && (
+                      <>
+                        {renderSlider(txt.lblPointXp, -8, 8, eqParams.xp, 0.5, (v) => syncFromPointSlope(v, undefined, undefined))}
+                        {renderSlider(txt.lblPointYp, -8, 8, eqParams.yp, 0.5, (v) => syncFromPointSlope(undefined, v, undefined))}
+                        {renderSlider(txt.lblSlope, -5, 5, eqParams.m, 0.1, (v) => syncFromPointSlope(undefined, undefined, v))}
+                      </>
+                    )}
+                    {currentEqType === 'twopoints' && (
+                      <>
+                        {renderSlider('P: Xp', -8, 8, eqParams.xp, 0.5, (v) => syncFromTwoPoints(v, undefined, undefined, undefined))}
+                        {renderSlider('P: Yp', -8, 8, eqParams.yp, 0.5, (v) => syncFromTwoPoints(undefined, v, undefined, undefined))}
+                        {renderSlider('Q: Xq', -8, 8, eqParams.xq, 0.5, (v) => syncFromTwoPoints(undefined, undefined, v, undefined))}
+                        {renderSlider('Q: Yq', -8, 8, eqParams.yq, 0.5, (v) => syncFromTwoPoints(undefined, undefined, undefined, v))}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.eqProperties}</div>
+                    <table className="results-table">
+                      <tbody>
+                        <tr><td>{txt.propDirVec}</td><td><b>d̄</b> = ({r(eqParams.dx)}, {r(eqParams.dy)})</td></tr>
+                        <tr><td>{txt.propNormVec}</td><td><b>n̄</b> = ({r(eqParams.A)}, {r(eqParams.B)})</td></tr>
+                        <tr><td>{txt.propSlope}</td><td>{slopeStr}</td></tr>
+                        <tr><td>{txt.propPerpSlope}</td><td>{eqParams.A !== 0 ? r(eqParams.B / eqParams.A) : '∞'}</td></tr>
+                        <tr><td>{txt.propAngle}</td><td>{r(angleDeg)}°</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {currentTab === 'relations' && (
+                <>
+                  <div className="card">
+                    <div className="card-title">{txt.relTypeTitle}</div>
+                    <select value={metricParams.mode} onChange={(e) => setMetricParams(prev => ({ ...prev, mode: e.target.value }))}>
+                      <option value="9">{txt.opt9}</option>
+                      <option value="10">{txt.opt10}</option>
+                      <option value="11">{txt.opt11}</option>
+                      <option value="12">{txt.opt12}</option>
+                      <option value="13">{txt.opt13}</option>
+                      <option value="14">{txt.opt14}</option>
+                      <option value="16.1">{txt.opt161}</option>
+                      <option value="16.2">{txt.opt162}</option>
+                    </select>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.relParams}</div>
+                    {(metricParams.mode === '9' || metricParams.mode === '14') && (
+                      <>
+                        <div className="control-header"><span>{txt.lblLineR1} (y = m_r x + n_r)</span></div>
+                        {renderSlider('m_r', -5, 5, metricParams.mr, 0.5, (v) => setMetricParams(prev => ({ ...prev, mr: v })))}
+                        {renderSlider('n_r', -5, 5, metricParams.nr, 0.5, (v) => setMetricParams(prev => ({ ...prev, nr: v })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblLineR2} (y = m_s x + n_s)</span></div>
+                        {renderSlider('m_s', -5, 5, metricParams.ms, 0.5, (v) => setMetricParams(prev => ({ ...prev, ms: v })))}
+                        {renderSlider('n_s', -5, 5, metricParams.ns, 0.5, (v) => setMetricParams(prev => ({ ...prev, ns: v })))}
+                      </>
+                    )}
+                    {metricParams.mode === '10' && (
+                      <>
+                        <div className="control-header"><span>{txt.lblLineR} (y = m x + n)</span></div>
+                        {renderSlider('m', -5, 5, metricParams.m, 0.5, (v) => setMetricParams(prev => ({ ...prev, m: v === 0 ? 0.01 : v })))}
+                        {renderSlider('n', -5, 5, metricParams.n, 0.5, (v) => setMetricParams(prev => ({ ...prev, n: v })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblPointExt} P(X_p, Y_p)</span></div>
+                        {renderSlider('X_p', -8, 8, metricParams.P.x, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, x: v } })))}
+                        {renderSlider('Y_p', -8, 8, metricParams.P.y, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, y: v } })))}
+                      </>
+                    )}
+                    {(metricParams.mode === '11' || metricParams.mode === '12') && (
+                      <>
+                        <div className="control-header"><span>Punto P(X_p, Y_p)</span></div>
+                        {renderSlider('X_p', -8, 8, metricParams.P.x, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, x: v } })))}
+                        {renderSlider('Y_p', -8, 8, metricParams.P.y, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, y: v } })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>Punto Q(X_q, Y_q)</span></div>
+                        {renderSlider('X_q', -8, 8, metricParams.Q.x, 0.5, (v) => setMetricParams(prev => ({ ...prev, Q: { ...prev.Q, x: v } })))}
+                        {renderSlider('Y_q', -8, 8, metricParams.Q.y, 0.5, (v) => setMetricParams(prev => ({ ...prev, Q: { ...prev.Q, y: v } })))}
+                      </>
+                    )}
+                    {metricParams.mode === '13' && (
+                      <>
+                        <div className="control-header"><span>{txt.lblLineR} (Ax + By + C = 0)</span></div>
+                        {renderSlider('A', -6, 6, metricParams.A1, 0.5, (v) => setMetricParams(prev => ({ ...prev, A1: v })))}
+                        {renderSlider('B', -6, 6, metricParams.B1, 0.5, (v) => setMetricParams(prev => ({ ...prev, B1: v })))}
+                        {renderSlider('C', -10, 10, metricParams.C1, 0.5, (v) => setMetricParams(prev => ({ ...prev, C1: v })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblPointExt} P(X_p, Y_p)</span></div>
+                        {renderSlider('X_p', -8, 8, metricParams.P.x, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, x: v } })))}
+                        {renderSlider('Y_p', -8, 8, metricParams.P.y, 0.5, (v) => setMetricParams(prev => ({ ...prev, P: { ...prev.P, y: v } })))}
+                      </>
+                    )}
+                    {metricParams.mode === '16.1' && (
+                      <>
+                        <div className="control-header"><span>{txt.lblCommonNormal}</span></div>
+                        {renderSlider('A', -6, 6, metricParams.A, 0.5, (v) => setMetricParams(prev => ({ ...prev, A: v })))}
+                        {renderSlider('B', -6, 6, metricParams.B, 0.5, (v) => setMetricParams(prev => ({ ...prev, B: v })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblTermsC}</span></div>
+                        {renderSlider('C₁', -10, 10, metricParams.C1, 0.5, (v) => setMetricParams(prev => ({ ...prev, C1: v })))}
+                        {renderSlider('C₂', -10, 10, metricParams.C2, 0.5, (v) => setMetricParams(prev => ({ ...prev, C2: v })))}
+                      </>
+                    )}
+                    {metricParams.mode === '16.2' && (
+                      <>
+                        <div className="control-header"><span>{txt.lblLineR1}</span></div>
+                        {renderSlider('A₁', -5, 5, metricParams.A1, 0.5, (v) => setMetricParams(prev => ({ ...prev, A1: v })))}
+                        {renderSlider('B₁', -5, 5, metricParams.B1, 0.5, (v) => setMetricParams(prev => ({ ...prev, B1: v })))}
+                        {renderSlider('C₁', -8, 8, metricParams.C1, 0.5, (v) => setMetricParams(prev => ({ ...prev, C1: v })))}
+                        <div className="control-header" style={{ marginTop: '6px' }}><span>{txt.lblLineR2}</span></div>
+                        {renderSlider('A₂', -5, 5, metricParams.A2, 0.5, (v) => setMetricParams(prev => ({ ...prev, A2: v })))}
+                        {renderSlider('B₂', -5, 5, metricParams.B2, 0.5, (v) => setMetricParams(prev => ({ ...prev, B2: v })))}
+                        {renderSlider('C₂', -8, 8, metricParams.C2, 0.5, (v) => setMetricParams(prev => ({ ...prev, C2: v })))}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.relAnalysis}</div>
+                    <p className="instruction">{relationsData.proc}</p>
+                    <div className="formula-display" style={{ marginTop: '0.4rem' }}>
+                      <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', marginBottom: '2px' }}>{txt.theoFormula}</div>
+                      {relationsData.formHtml}
+                    </div>
+                    <table className="results-table">
+                      <tbody>
+                        {relationsData.tableRows}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {currentTab === 'triangles' && (
+                <>
+                  <div className="card">
+                    <div className="card-title">{txt.triVertices}</div>
+                    <p className="instruction" dangerouslySetInnerHTML={{ __html: txt.triDragInstr }}></p>
+                    <div className="control-header"><span>{txt.lblVertexA}</span></div>
+                    {renderSlider('Ax', -8, 8, triangleParams.A.x, 0.5, (v) => setTriangleParams(prev => ({ ...prev, A: { ...prev.A, x: v } })))}
+                    {renderSlider('Ay', -8, 8, triangleParams.A.y, 0.5, (v) => setTriangleParams(prev => ({ ...prev, A: { ...prev.A, y: v } })))}
+                    <div className="control-header" style={{ marginTop: '5px' }}><span>{txt.lblVertexB}</span></div>
+                    {renderSlider('Bx', -8, 8, triangleParams.B.x, 0.5, (v) => setTriangleParams(prev => ({ ...prev, B: { ...prev.B, x: v } })))}
+                    {renderSlider('By', -8, 8, triangleParams.B.y, 0.5, (v) => setTriangleParams(prev => ({ ...prev, B: { ...prev.B, y: v } })))}
+                    <div className="control-header" style={{ marginTop: '5px' }}><span>{txt.lblVertexC}</span></div>
+                    {renderSlider('Cx', -8, 8, triangleParams.C.x, 0.5, (v) => setTriangleParams(prev => ({ ...prev, C: { ...prev.C, x: v } })))}
+                    {renderSlider('Cy', -8, 8, triangleParams.C.y, 0.5, (v) => setTriangleParams(prev => ({ ...prev, C: { ...prev.C, y: v } })))}
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.triCenters}</div>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={triangleParams.showCircumcenter} 
+                        onChange={(e) => setTriangleParams(prev => ({ ...prev, showCircumcenter: e.target.checked }))} 
+                      />
+                      <span className="badge badge-accent">{txt.triCircumcenter}</span> {txt.triCircumDesc}
+                    </label>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={triangleParams.showCentroid} 
+                        onChange={(e) => setTriangleParams(prev => ({ ...prev, showCentroid: e.target.checked }))} 
+                      />
+                      <span className="badge badge-danger">{txt.triCentroid}</span> {txt.triCentroidDesc}
+                    </label>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={triangleParams.showOrthocenter} 
+                        onChange={(e) => setTriangleParams(prev => ({ ...prev, showOrthocenter: e.target.checked }))} 
+                      />
+                      <span className="badge badge-warning">{txt.triOrthocenter}</span> {txt.triOrthocenterDesc}
+                    </label>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={triangleParams.showIncenter} 
+                        onChange={(e) => setTriangleParams(prev => ({ ...prev, showIncenter: e.target.checked }))} 
+                      />
+                      <span className="badge badge-primary">{txt.triIncenter}</span> {txt.triIncenterDesc}
+                    </label>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">{txt.triProperties}</div>
+                    <table className="results-table">
+                      <tbody>
+                        <tr><td>{txt.triAreaDet}</td><td><b>{r(triPropData.area)} u²</b></td></tr>
+                        <tr><td>{txt.triPerimeter}</td><td>{r(triPropData.perim)} u</td></tr>
+                        {triangleParams.showCentroid && (
+                          <tr><td>{txt.triCentroid} (G):</td><td><b>({r(triPropData.G.x)}, {r(triPropData.G.y)})</b></td></tr>
+                        )}
+                        {triangleParams.showIncenter && (
+                          <tr><td>{txt.triIncenter} (I):</td><td><b>({r(triPropData.In.x)}, {r(triPropData.In.y)})</b></td></tr>
+                        )}
+                        {triangleParams.showCircumcenter && triPropData.O && (
+                          <tr><td>{txt.triCircumcenter} (O):</td><td><b>({r(triPropData.O.x)}, {r(triPropData.O.y)})</b></td></tr>
+                        )}
+                        {triangleParams.showOrthocenter && triPropData.H && (
+                          <tr><td>{txt.triOrthocenter} (H):</td><td><b>({r(triPropData.H.x)}, {r(triPropData.H.y)})</b></td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Canvas y Desarrollo inferior */}
+            <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
+              <div className="flex-1 relative bg-white overflow-hidden">
+                <canvas
+                  ref={canvasRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onWheel={handleWheel}
+                  style={{ width: '100%', height: '100%', display: 'block', cursor: 'crosshair' }}
+                />
+                
+                {/* Botones de zoom / reset flotantes */}
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-1.5 rounded-lg border border-slate-200 flex gap-1.5 shadow-md z-10">
+                  <button title="Zoom In" onClick={() => zoom(1.2)} className="w-8 h-8 flex items-center justify-center font-bold border border-slate-200 bg-white rounded hover:bg-slate-100">+</button>
+                  <button title="Zoom Out" onClick={() => zoom(0.8)} className="w-8 h-8 flex items-center justify-center font-bold border border-slate-200 bg-white rounded hover:bg-slate-100">−</button>
+                  <button title="Centrar / Reset View" onClick={resetView} className="w-8 h-8 flex items-center justify-center font-bold border border-slate-200 bg-white rounded hover:bg-slate-100">⌖</button>
+                </div>
+
+                {/* Pie de página institucional fijado en el canvas */}
+                <div className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-mono select-none pointer-events-none z-10">
+                  {txt.footer}
+                </div>
+              </div>
+
+              {/* Panel inferior para el desarrollo de triángulos o relaciones */}
+              {(currentTab === 'triangles' || currentTab === 'relations') && (
+                <div className="h-64 bg-slate-50 border-t border-slate-200 p-4 overflow-y-auto shrink-0 shadow-inner">
+                  {currentTab === 'relations' && (
+                    <>
+                      <h3 style={{ color: 'var(--primary)', marginBottom: '0.8rem', fontWeight: 700 }}>Desarrollo Completo del Cálculo</h3>
+                      <div className="math-step">
+                        {metricParams.mode === '9' && (
+                          Math.abs(metricParams.mr - metricParams.ms) > 1e-6 ? (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>I = ((ns - nr)/(mr - ms), (mr·ns - ms·nr)/(mr - ms))</code></p>
+                              <p>1. Sistema: <code>r: y = {metricParams.mr}x + ({metricParams.nr})</code> &nbsp;|&nbsp; <code>s: y = {metricParams.ms}x + ({metricParams.ns})</code></p>
+                              <p>2. Igualación: <code>{metricParams.mr}x + ({metricParams.nr}) = {metricParams.ms}x + ({metricParams.ns})</code> &rarr; <code>({metricParams.mr} &minus; ({metricParams.ms}))x = {metricParams.ns} &minus; ({metricParams.nr})</code></p>
+                              <p>3. Despeje de X: <code>x = ({metricParams.ns} &minus; ({metricParams.nr})) / ({metricParams.mr} &minus; ({metricParams.ms})) = {r((metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms))}</code></p>
+                              <p>4. Sustitución de Y: <code>y = {metricParams.mr}({r((metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms))}) + ({metricParams.nr}) = {r(metricParams.mr * ((metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms)) + metricParams.nr)}</code></p>
+                              <p><b>Punto de Intersección: I({r((metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms))}, {r(metricParams.mr * ((metricParams.ns - metricParams.nr) / (metricParams.mr - metricParams.ms)) + metricParams.nr)})</b></p>
+                            </>
+                          ) : (
+                            <p>Las pendientes son idénticas (<code>m_r = m_s = {metricParams.mr}</code>). Rectas paralelas o coincidentes.</p>
+                          )
+                        )}
+                        {metricParams.mode === '10' && (() => {
+                          const m_perp = -1 / metricParams.m;
+                          const n_perp = metricParams.P.y - m_perp * metricParams.P.x;
+                          const den = metricParams.m + (1 / metricParams.m);
+                          const Xi = (metricParams.P.x / metricParams.m + metricParams.P.y - metricParams.n) / den;
+                          const Yi = (metricParams.P.x + metricParams.m * metricParams.P.y + metricParams.n / metricParams.m) / den;
+                          return (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>Xi = (Xp/m + Yp - n) / (m + 1/m)</code> &nbsp;|&nbsp; <code>Yi = (Xp + m·Yp + n/m) / (m + 1/m)</code></p>
+                              <p>1. Recta base dada: <code>r: y = {metricParams.m}x + ({metricParams.n})</code></p>
+                              <p>2. Pendiente perpendicular: <code>m' = -1/m = -1/{metricParams.m} = {r(m_perp)}</code></p>
+                              <p>3. Recta ortogonal por P({metricParams.P.x}, {metricParams.P.y}): <code>y &minus; {metricParams.P.y} = {r(m_perp)}(x &minus; {metricParams.P.x}) &rarr; y = {r(m_perp)}x + ({r(n_perp)})</code></p>
+                              <p>4. Evaluación con fórmula: <code>X_i = ({metricParams.P.x}/{metricParams.m} + {metricParams.P.y} &minus; ({metricParams.n})) / ({metricParams.m} + 1/{metricParams.m}) = {r(Xi)}</code></p>
+                              <p><b>Pie de la perpendicular: I({r(Xi)}, {r(Yi)})</b></p>
+                            </>
+                          );
+                        })()}
+                        {metricParams.mode === '11' && (
+                          <>
+                            <p><b>Fórmula Teórica:</b> <code>M = ((Xp + Xq)/2, (Yp + Yq)/2)</code></p>
+                            <p>Puntos: <code>P({metricParams.P.x}, {metricParams.P.y})</code> y <code>Q({metricParams.Q.x}, {metricParams.Q.y})</code></p>
+                            <p>Abscisa M_x: <code>({metricParams.P.x} + {metricParams.Q.x}) / 2 = {r((metricParams.P.x + metricParams.Q.x) / 2)}</code></p>
+                            <p>Ordenada M_y: <code>({metricParams.P.y} + {metricParams.Q.y}) / 2 = {r((metricParams.P.y + metricParams.Q.y) / 2)}</code></p>
+                            <p><b>Punto Medio: M({r((metricParams.P.x + metricParams.Q.x) / 2)}, {r((metricParams.P.y + metricParams.Q.y) / 2)})</b></p>
+                          </>
+                        )}
+                        {metricParams.mode === '12' && (() => {
+                          const dx = metricParams.Q.x - metricParams.P.x;
+                          const dy = metricParams.Q.y - metricParams.P.y;
+                          return (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>d = √((Xq - Xp)² + (Yq - Yp)²)</code></p>
+                              <p>Incremento horizontal: <code>Δx = {metricParams.Q.x} &minus; ({metricParams.P.x}) = {r(dx)}</code> &rarr; <code>(Δx)² = {r(dx * dx)}</code></p>
+                              <p>Incremento vertical: <code>Δy = {metricParams.Q.y} &minus; ({metricParams.P.y}) = {r(dy)}</code> &rarr; <code>(Δy)² = {r(dy * dy)}</code></p>
+                              <p>Suma bajo el radical: <code>{r(dx * dx)} + {r(dy * dy)} = {r(dx * dx + dy * dy)}</code></p>
+                              <p><b>Distancia euclídea: d = √({r(dx * dx + dy * dy)}) = {r(Math.hypot(dx, dy))}</b></p>
+                            </>
+                          );
+                        })()}
+                        {metricParams.mode === '13' && (() => {
+                          const num = metricParams.A1 * metricParams.P.x + metricParams.B1 * metricParams.P.y + metricParams.C1;
+                          const den = Math.hypot(metricParams.A1, metricParams.B1);
+                          return (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>d = |A·Xp + B·Yp + C| / √(A² + B²)</code></p>
+                              <p>1. Recta: <code>{metricParams.A1}x + ({metricParams.B1})y + ({metricParams.C1}) = 0</code> &nbsp;|&nbsp; Punto: <code>P({metricParams.P.x}, {metricParams.P.y})</code></p>
+                              <p>2. Valor del numerador: <code>|{metricParams.A1}({metricParams.P.x}) + ({metricParams.B1})({metricParams.P.y}) + ({metricParams.C1})| = |{r(num)}| = {r(Math.abs(num))}</code></p>
+                              <p>3. Denominador (módulo normal): <code>√({metricParams.A1}² + ({metricParams.B1})²) = √({metricParams.A1*metricParams.A1 + metricParams.B1*metricParams.B1}) = {r(den)}</code></p>
+                              <p><b>Distancia mínima: d = {r(Math.abs(num))} / {r(den)} = {r(Math.abs(num) / (den || 1))}</b></p>
+                            </>
+                          );
+                        })()}
+                        {metricParams.mode === '14' && (() => {
+                          const num = Math.abs(metricParams.ms - metricParams.mr);
+                          const den = 1 + metricParams.ms * metricParams.mr;
+                          return (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>tan α = |ms - mr| / |1 + ms·mr|</code></p>
+                              <p>Numerador: <code>|{metricParams.ms} &minus; ({metricParams.mr})| = {r(num)}</code></p>
+                              <p>Denominador: <code>|1 + ({metricParams.ms})({metricParams.mr})| = |{r(den)}| = {r(Math.abs(den))}</code></p>
+                              <p>Cociente: <code>tan α = {r(num)} / {r(Math.abs(den))} = {Math.abs(den) > 1e-6 ? r(num / Math.abs(den)) : '∞'}</code></p>
+                              <p><b>Ángulo agudo: α = {Math.abs(den) > 1e-6 ? r(Math.atan(num / Math.abs(den)) * 180 / Math.PI) : 90}°</b></p>
+                            </>
+                          );
+                        })()}
+                        {metricParams.mode === '16.1' && (
+                          <>
+                            <p><b>Fórmula Teórica:</b> <code>d = |C1 - C2| / √(A² + B²)</code></p>
+                            <p>Rectas paralelas: <code>{metricParams.A}x + ({metricParams.B})y + ({metricParams.C1}) = 0</code> &nbsp;y&nbsp; <code>{metricParams.A}x + ({metricParams.B})y + ({metricParams.C2}) = 0</code></p>
+                            <p>Diferencia de coeficientes: <code>|{metricParams.C1} &minus; ({metricParams.C2})| = {r(Math.abs(metricParams.C1 - metricParams.C2))}</code></p>
+                            <p>Módulo vector normal común: <code>√({metricParams.A}² + ({metricParams.B})²) = {r(Math.hypot(metricParams.A, metricParams.B))}</code></p>
+                            <p><b>Distancia constante: d = {r(Math.abs(metricParams.C1 - metricParams.C2))} / {r(Math.hypot(metricParams.A, metricParams.B))} = {r(Math.abs(metricParams.C1 - metricParams.C2) / (Math.hypot(metricParams.A, metricParams.B) || 1))}</b></p>
+                          </>
+                        )}
+                        {metricParams.mode === '16.2' && (() => {
+                          const n1 = Math.hypot(metricParams.A1, metricParams.B1);
+                          const n2 = Math.hypot(metricParams.A2, metricParams.B2);
+                          return (
+                            <>
+                              <p><b>Fórmula Teórica:</b> <code>(A1·x + B1·y + C1) / √(A1² + B1²) = ± (A2·x + B2·y + C2) / √(A2² + B2²)</code></p>
+                              <p>Módulos de vectores normales: <code>|n₁| = {r(n1)}</code> &nbsp;|&nbsp; <code>|n₂| = {r(n2)}</code></p>
+                              <p>Bisectriz 1 (+): <code>({metricParams.A1}x + ({metricParams.B1})y + ({metricParams.C1})) / {r(n1)} = ({metricParams.A2}x + ({metricParams.B2})y + ({metricParams.C2})) / {r(n2)}</code></p>
+                              <p>Bisectriz 2 (&minus;): <code>({metricParams.A1}x + ({metricParams.B1})y + ({metricParams.C1})) / {r(n1)} = &minus;({metricParams.A2}x + ({metricParams.B2})y + ({metricParams.C2})) / {r(n2)}</code></p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </>
+                  )}
+
+                  {currentTab === 'triangles' && (() => {
+                    const { A, B, C, showCircumcenter, showOrthocenter, showCentroid, showIncenter } = triangleParams;
+                    const eqAB = formatLineEq(A.y - B.y, B.x - A.x, A.x * B.y - B.x * A.y);
+                    const eqBC = formatLineEq(B.y - C.y, C.x - B.x, B.x * C.y - C.x * B.y);
+                    const eqCA = formatLineEq(C.y - A.y, A.x - C.x, C.x * A.y - A.x * C.y);
+                    const area = 0.5 * Math.abs(A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+
+                    const Mab = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+                    const Mbc = { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 };
+
+                    return (
+                      <>
+                        <h3 style={{ color: 'var(--primary)', marginBottom: '0.8rem', fontWeight: 700 }}>{txt.mathPanelTitle}</h3>
+                        <div className="columns-2">
+                          <div className="math-step">
+                            <h4><span>{txt.mathSideEqs}</span></h4>
+                            <p>{txt.mathSideAB}: <code>{eqAB}</code></p>
+                            <p>{txt.mathSideBC}: <code>{eqBC}</code></p>
+                            <p>{txt.mathSideCA}: <code>{eqCA}</code></p>
+                            <p style={{ marginTop: '0.4rem', borderTop: '1px dashed #e2e8f0', paddingTop: '0.3rem' }}>
+                              <b>{txt.mathAreaFormula}:</b><br />
+                              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Fórmula: <code>Área = ½·|XA(YB &minus; YC) + XB(YC &minus; YA) + XC(YA &minus; YB)|</code></span><br />
+                              <code>Área = ½·|{A.x}({B.y}&minus;{C.y}) + {B.x}({C.y}&minus;{A.y}) + {C.x}({A.y}&minus;{B.y})| = <b>{r(area)} u²</b></code>
+                            </p>
+                          </div>
+
+                          {showCircumcenter && triPropData.O && (
+                            <div className="math-step" style={{ borderLeft: '3px solid #059669' }}>
+                              <h4 style={{ color: '#059669' }}>{txt.mathCircum}</h4>
+                              <p><b>Definición:</b> Intersección de las mediatrices (pasan por el punto medio y son perpendiculares al lado).</p>
+                              <p>1. Mediatriz AB por Mab({r(Mab.x)}, {r(Mab.y)}): <code>{formatLineEq(B.x - A.x, B.y - A.y, -((B.x - A.x)*Mab.x + (B.y - A.y)*Mab.y))}</code></p>
+                              <p>2. Mediatriz BC por Mbc({r(Mbc.x)}, {r(Mbc.y)}): <code>{formatLineEq(C.x - B.x, C.y - B.y, -((C.x - B.x)*Mbc.x + (C.y - B.y)*Mbc.y))}</code></p>
+                              <p>3. Resolución del sistema 2x2 &rarr; <b>Circuncentro O({r(triPropData.O.x)}, {r(triPropData.O.y)})</b></p>
+                            </div>
+                          )}
+
+                          {showOrthocenter && triPropData.H && (
+                            <div className="math-step" style={{ borderLeft: '3px solid #d97706' }}>
+                              <h4 style={{ color: '#d97706' }}>{txt.mathOrtho}</h4>
+                              <p><b>Definición:</b> Intersección de las alturas (pasan por cada vértice y son perpendiculares al lado opuesto).</p>
+                              <p>1. Altura A por A({A.x}, {A.y}) ⟂ a BC: <code>{formatLineEq(C.x - B.x, C.y - B.y, -((C.x - B.x)*A.x + (C.y - B.y)*A.y))}</code></p>
+                              <p>2. Altura B por B({B.x}, {B.y}) ⟂ a CA: <code>{formatLineEq(A.x - C.x, A.y - C.y, -((A.x - C.x)*B.x + (A.y - C.y)*B.y))}</code></p>
+                              <p>3. Resolución del sistema &rarr; <b>Ortocentro H({r(triPropData.H.x)}, {r(triPropData.H.y)})</b></p>
+                            </div>
+                          )}
+
+                          {showCentroid && (
+                            <div className="math-step" style={{ borderLeft: '3px solid #dc2626' }}>
+                              <h4 style={{ color: '#dc2626' }}>{txt.mathCentroid}</h4>
+                              <p><b>Definición y fórmula teórica:</b> Intersección de las tres medianas (centro de gravedad). Divide cada mediana en razón 2:1.</p>
+                              <p><code>G = ((XA + XB + XC) / 3, (YA + YB + YC) / 3)</code></p>
+                              <p>Sustitución: <code>(({A.x} + {B.x} + {C.x})/3, ({A.y} + {B.y} + {C.y})/3) = <b>({r(triPropData.G.x)}, {r(triPropData.G.y)})</b></code></p>
+                            </div>
+                          )}
+
+                          {showIncenter && (
+                            <div className="math-step" style={{ borderLeft: '3px solid #2563eb' }}>
+                              <h4 style={{ color: '#2563eb' }}>{txt.mathIncenter}</h4>
+                              <p><b>Fórmula Teórica:</b> <code>I = (a·A + b·B + c·C) / (a + b + c)</code> &nbsp;|&nbsp; <code>r = Área / Semiperímetro</code></p>
+                              <p>Lados: <code>a = {r(triPropData.a)}</code>, <code>b = {r(triPropData.b)}</code>, <code>c = {r(triPropData.cLen)}</code> (Perímetro = {r(triPropData.perim)})</p>
+                              <p><b>Incentro I({r(triPropData.In.x)}, {r(triPropData.In.y)})</b> con radio inscrito <code>r = {r(area / (triPropData.perim / 2))}</code></p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

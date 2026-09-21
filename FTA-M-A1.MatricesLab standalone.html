@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Matrix Transformations & Linear Algebra</title>
+
+  <!-- KaTeX for Universal Mathematical Typesetting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <style>
+    :root {
+      --i-col: #e63946;      /* Red for î / Col 1 / x-basis */
+      --j-col: #1d3557;      /* Blue for ĵ / Col 2 / y-basis */
+      --t-col: #2a9d8f;      /* Green-teal for translation / Col 3 */
+      --bg-main: #f8f9fa;
+      --panel-bg: #ffffff;
+      --border-col: #dee2e6;
+      --text-main: #2b2d42;
+      --text-muted: #6c757d;
+      --area-fill: rgba(230, 57, 70, 0.15);
+      --area-stroke: rgba(230, 57, 70, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Top Navigation Bar */
+    header {
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border-col);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand-title { font-weight: 700; font-size: 1.15rem; }
+    .controls-top { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    select, button {
+      padding: 0.45rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-col);
+      background: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .lang-btn { font-weight: 600; min-width: 4rem; }
+
+    /* Main Grid Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      flex: 1;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    /* Left Control Panel */
+    .panel-left {
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border-col);
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Right Canvas / Graphic Panel */
+    .panel-right {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+      overflow: hidden;
+    }
+    canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+    .canvas-hud {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--border-col);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Cards and Structural Blocks */
+    .card {
+      border: 1px solid var(--border-col);
+      border-radius: 8px;
+      padding: 1rem;
+      background: #fff;
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Color-Coded Matrix Grids */
+    .matrix-input-grid {
+      display: grid;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .matrix-input-grid.dim-2x2 { grid-template-columns: repeat(2, 1fr); }
+    .matrix-input-grid.dim-3x3 { grid-template-columns: repeat(3, 1fr); }
+
+    .entry-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.4rem;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      background: #fdfdfd;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .col-idx-0 { border-left: 4px solid var(--i-col); }
+    .col-idx-1 { border-left: 4px solid var(--j-col); }
+    .col-idx-2 { border-left: 4px solid var(--t-col); }
+
+    .entry-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
+    .entry-input {
+      width: 100%;
+      border: 1px solid var(--border-col);
+      border-radius: 4px;
+      padding: 0.2rem 0.4rem;
+      font-size: 0.85rem;
+    }
+    .entry-slider { width: 100%; cursor: pointer; }
+
+    /* Warnings & Feedback */
+    .warning-box {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* Preset Buttons */
+    .presets-container { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .preset-btn {
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      background: #edf2f7;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+    }
+    .preset-btn:hover { background: #e2e8f0; }
+
+    /* Bottom Pedagogy/Explanation Box */
+    .pedagogy-box {
+      font-size: 0.9rem;
+      line-height: 1.45;
+      background: #f1f5f9;
+      border-left: 4px solid var(--j-col);
+      padding: 0.75rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .info-pane {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: #475569;
+      background: #fafafa;
+      border: 1px dashed var(--border-col);
+      border-radius: 6px;
+      padding: 0.6rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 900px) {
+      .workspace { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .panel-left { border-right: none; border-bottom: 1px solid var(--border-col); }
+      .panel-right { height: 60vh; min-height: 400px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand-title" id="lbl-site-title">Linear Algebra 2D Visualizer</div>
+    <div class="controls-top">
+      <label for="lab-mode-select" style="font-size:0.85rem; font-weight:600;" id="lbl-lab-mode">Lab:</label>
+      <select id="lab-mode-select">
+        <option value="space">Space Transformation</option>
+        <option value="polygon">Polygon Transformation</option>
+      </select>
+      <label for="mode-select" style="font-size:0.85rem; font-weight:600;" id="lbl-mode">Mode:</label>
+      <select id="mode-select">
+        <optgroup label="Transformations (Plane)" id="grp-transformations">
+          <option value="rotation">Rotation</option>
+          <option value="scaling">Scaling</option>
+          <option value="shear">Shear</option>
+          <option value="reflection">Reflection</option>
+          <option value="translation">Translation (Affine)</option>
+          <option value="generic_affine">Generic Affine</option>
+          <option value="composition">Composition (A₂ · A₁)</option>
+        </optgroup>
+        <optgroup label="Operations (Matrix Algebra)" id="grp-operations">
+          <option value="op_add">Addition (A + B)</option>
+          <option value="op_sub">Subtraction (A - B)</option>
+          <option value="op_scalar">Scalar Multiplication (k · A)</option>
+          <option value="op_mult">Matrix Multiplication (A · B)</option>
+          <option value="op_transpose">Transpose (Aᵀ)</option>
+          <option value="op_det">Determinant (det A)</option>
+          <option value="op_inverse">Inverse (A⁻¹)</option>
+        </optgroup>
+      </select>
+      <button class="lang-btn" id="lang-btn">ES</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="workspace">
+
+    <!-- Left Controls Panel -->
+    <aside class="panel-left">
+      <!-- Polygon Setup Block (Polygon Lab only) -->
+      <section class="card" id="polygon-setup-card" style="display:none;">
+        <div class="card-title" id="lbl-polygon-setup">Polygon Setup</div>
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <div>
+            <label for="polygon-type-select" style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;" id="lbl-polygon-type">Polygon type:</label>
+            <select id="polygon-type-select" style="width:100%;">
+              <option value="3">Triangle</option>
+              <option value="4">Quadrilateral</option>
+            </select>
+          </div>
+          <div id="polygon-points-container" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+        </div>
+      </section>
+
+      <!-- Presets Block -->
+      <section class="card" id="presets-card">
+        <div class="card-title" id="lbl-presets">Presets</div>
+        <div class="presets-container" id="presets-list"></div>
+      </section>
+
+      <!-- Matrix Inputs -->
+      <section class="card">
+        <div class="card-title">
+          <span id="lbl-inputs">Inputs</span>
+          <button id="btn-reset" class="preset-btn" style="padding:0.2rem 0.5rem;" id="lbl-reset">Reset</button>
+        </div>
+        <div id="matrices-input-container" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+      </section>
+
+      <!-- Warning Box -->
+      <div class="warning-box" id="warning-box"></div>
+
+      <!-- Result / KaTeX Math Block -->
+      <section class="card">
+        <div class="card-title" id="lbl-computation">Result & Computed Steps</div>
+        <div id="math-output" style="overflow-x:auto; padding:0.4rem 0;"></div>
+      </section>
+
+      <!-- Pedagogy / Dynamic Insight -->
+      <section class="card">
+        <div class="card-title" id="lbl-explanation">Geometric Analysis</div>
+        <div class="pedagogy-box" id="pedagogy-text"></div>
+      </section>
+
+      <!-- Euclidean vs Affine Space Explainer -->
+      <section class="info-pane" id="affine-vs-euclidean-pane">
+        <div style="font-weight:700; margin-bottom:0.25rem;" id="lbl-space-title">Euclidean vs. Affine Space</div>
+        <p id="lbl-space-desc"></p>
+      </section>
+    </aside>
+
+    <!-- Right Canvas Graphic Panel -->
+    <section class="panel-right">
+      <div class="canvas-hud" id="hud-text">Pan: Drag | Zoom: Wheel</div>
+      <canvas id="gridCanvas"></canvas>
+    </section>
+
+  </main>
+
+  <script>
+    /* =========================================================================
+       1. INTERNATIONALIZATION (i18n) DICTIONARY & STATE
+       ========================================================================= */
+    const i18n = {
+      en: {
+        siteTitle: "2D Matrix Transformations & Linear Algebra",
+        labModeLabel: "Lab:",
+        labModes: {
+          space: "Space Transformation",
+          polygon: "Polygon Transformation"
+        },
+        polygonSetup: "Polygon Setup",
+        polygonType: "Polygon type:",
+        polygonTypes: { "3": "Triangle", "4": "Quadrilateral" },
+        pointLabel: (i) => `Point ${i}`,
+        polygonPresets: {
+          identity: "Identity (no change)",
+          rot90: "Rotate 90°",
+          rot180: "Rotate 180°",
+          scale2: "Scale 2×",
+          scaleHalf: "Scale 0.5×",
+          reflectX: "Reflect across x-axis",
+          reflectY: "Reflect across y-axis",
+          shearX: "Shear X (k=1)",
+          translate: "Translate (2, 1)"
+        },
+        polygonPedagogy: (name, det) => `The ${name} vertices are mapped through the chosen matrix. Signed area factor (det) = ${det.toFixed(2)}. ${Math.abs(det) < 1e-5 ? "The polygon degenerates (collapses to a line or point)." : (det < 0 ? "Vertex orientation is reversed (mirrored)." : "Vertex orientation is preserved.")}`,
+        modeLabel: "Mode:",
+        grpTransformations: "Transformations (Plane)",
+        grpOperations: "Matrix Operations",
+        presets: "Presets",
+        inputs: "Matrix Parameters",
+        reset: "Reset",
+        computation: "Matrix Calculation",
+        explanation: "Geometric Interpretation",
+        panZoomHud: "Pan: Click & Drag | Zoom: Mouse Wheel",
+        spaceTitle: "Linear vs. Affine Space (Homogeneous Coordinates)",
+        spaceDesc: "Linear transformations (2×2) strictly keep the origin (0,0) fixed. Translations require an affine map, represented linearly in homogeneous coordinates by elevating ℝ² to ℝ³ with a constant coordinate z = 1.",
+        singularWarn: "Singular Matrix (det = 0): Transformation collapses space into a line or point. The inverse does not exist.",
+        zeroDivWarn: "Division by zero is undefined.",
+        detUnitSquare: "Original Area: 1.00 | Transformed Area: ",
+        modes: {
+          rotation: "Rotation",
+          scaling: "Scaling",
+          shear: "Shear",
+          reflection: "Reflection",
+          translation: "Translation (Affine)",
+          generic_affine: "Generic Affine",
+          composition: "Composition (A₂ · A₁)",
+          op_add: "Addition (A + B)",
+          op_sub: "Subtraction (A - B)",
+          op_scalar: "Scalar Multiplication (k · A)",
+          op_mult: "Matrix Multiplication (A · B)",
+          op_transpose: "Transpose (Aᵀ)",
+          op_det: "Determinant (det A)",
+          op_inverse: "Inverse (A⁻¹)"
+        },
+        presetsList: {
+          rot45: "Rotate 45°",
+          rot90: "Rotate 90°",
+          scaleDouble: "Scale 2×",
+          scaleNonUniform: "Scale (2, 0.5)",
+          shearX: "Shear X (k=1)",
+          reflectYeqX: "Reflect across y = x",
+          trans2_1: "Translate (2, 1)",
+          collapseLine: "Collapse to Line (det=0)"
+        },
+        pedagogy: {
+          rotDesc: (deg, det) => `Rotates the plane by ${deg.toFixed(1)}° counter-clockwise. Vector lengths and angular relations are preserved. Area scaling factor (det) = ${det.toFixed(2)}.`,
+          scaleDesc: (sx, sy, det) => `Scales space by factor ${sx.toFixed(2)} along x and ${sy.toFixed(2)} along y. Oriented area scaling factor = ${det.toFixed(2)}.`,
+          shearDesc: (k, axis, det) => `Applies a parallel shear of magnitude ${k.toFixed(2)} along the ${axis}-axis. Preserves baseline collinearity and grid area (det = ${det.toFixed(2)}).`,
+          reflectDesc: (axis, det) => `Reflects the plane across ${axis}. Orientation is inverted (det = ${det.toFixed(2)} < 0).`,
+          transDesc: (tx, ty) => `Displaces all points rigidly by the vector (${tx.toFixed(2)}, ${ty.toFixed(2)}). Origin (0,0) is mapped to (${tx.toFixed(2)}, ${ty.toFixed(2)}).`,
+          genericDesc: (det, orient) => `Transforms basis î to column 1 and ĵ to column 2. Absolute area change is |det| = ${Math.abs(det).toFixed(2)}. Orientation is ${orient}.`,
+          compositionDesc: (det) => `First applies transformation A₁, followed by A₂. The composite matrix represents M = A₂ · A₁. Total determinant = ${det.toFixed(2)}.`
+        }
+      },
+      es: {
+        siteTitle: "Transformaciones Matriciales 2D y Álgebra Lineal",
+        labModeLabel: "Laboratorio:",
+        labModes: {
+          space: "Transformación del Espacio",
+          polygon: "Transformación de Polígonos"
+        },
+        polygonSetup: "Configuración del Polígono",
+        polygonType: "Tipo de polígono:",
+        polygonTypes: { "3": "Triángulo", "4": "Cuadrilátero" },
+        pointLabel: (i) => `Punto ${i}`,
+        polygonPresets: {
+          identity: "Identidad (sin cambios)",
+          rot90: "Rotar 90°",
+          rot180: "Rotar 180°",
+          scale2: "Escalar 2×",
+          scaleHalf: "Escalar 0.5×",
+          reflectX: "Reflejar sobre eje x",
+          reflectY: "Reflejar sobre eje y",
+          shearX: "Cizalla en X (k=1)",
+          translate: "Trasladar (2, 1)"
+        },
+        polygonPedagogy: (name, det) => `Los vértices del ${name} se transforman mediante la matriz elegida. Factor de área con signo (det) = ${det.toFixed(2)}. ${Math.abs(det) < 1e-5 ? "El polígono degenera (colapsa en una recta o punto)." : (det < 0 ? "La orientación de los vértices se invierte (efecto espejo)." : "La orientación de los vértices se conserva.")}`,
+        modeLabel: "Modo:",
+        grpTransformations: "Transformaciones (Plano)",
+        grpOperations: "Operaciones Matriciales",
+        presets: "Casos Predefinidos",
+        inputs: "Parámetros Matriciales",
+        reset: "Restablecer",
+        computation: "Cálculo Matricial",
+        explanation: "Interpretación Geométrica",
+        panZoomHud: "Mover: Arrastrar | Zoom: Rueda del ratón",
+        spaceTitle: "Espacio Lineal vs. Afín (Coordenadas Homogéneas)",
+        spaceDesc: "Las transformaciones lineales (2×2) dejan el origen (0,0) invariante. Para trasladar se requiere una transformación afín, representada linealmente en coordenadas homogéneas embebiendo ℝ² en ℝ³ fijando z = 1.",
+        singularWarn: "Matriz Singular (det = 0): El espacio colapsa en una recta o punto. La inversa no existe.",
+        zeroDivWarn: "División por cero no permitida.",
+        detUnitSquare: "Área Original: 1.00 | Área Transformada: ",
+        modes: {
+          rotation: "Rotación",
+          scaling: "Escalado",
+          shear: "Cizallamiento (Shear)",
+          reflection: "Reflexión",
+          translation: "Traslación (Afín)",
+          generic_affine: "Afín Genérica",
+          composition: "Composición (A₂ · A₁)",
+          op_add: "Suma (A + B)",
+          op_sub: "Resta (A - B)",
+          op_scalar: "Multiplicación Escalar (k · A)",
+          op_mult: "Multiplicación de Matrices (A · B)",
+          op_transpose: "Transpuesta (Aᵀ)",
+          op_det: "Determinante (det A)",
+          op_inverse: "Inversa (A⁻¹)"
+        },
+        presetsList: {
+          rot45: "Rotar 45°",
+          rot90: "Rotar 90°",
+          scaleDouble: "Escalar 2×",
+          scaleNonUniform: "Escalar (2, 0.5)",
+          shearX: "Cizalla en X (k=1)",
+          reflectYeqX: "Reflejar sobre y = x",
+          trans2_1: "Trasladar (2, 1)",
+          collapseLine: "Colapso a Recta (det=0)"
+        },
+        pedagogy: {
+          rotDesc: (deg, det) => `Rota el plano ${deg.toFixed(1)}° en sentido antihorario. Preserva distancias relativas y ángulos. Factor de cambio de área (det) = ${det.toFixed(2)}.`,
+          scaleDesc: (sx, sy, det) => `Escala el espacio por un factor ${sx.toFixed(2)} en x y ${sy.toFixed(2)} en y. Factor de escala de área orientada = ${det.toFixed(2)}.`,
+          shearDesc: (k, axis, det) => `Aplica cizalladura de magnitud ${k.toFixed(2)} paralela al eje ${axis}. Conserva áreas (det = ${det.toFixed(2)}).`,
+          reflectDesc: (axis, det) => `Refleja el plano respecto a ${axis}. Se invierte la orientación del espacio (det = ${det.toFixed(2)} < 0).`,
+          transDesc: (tx, ty) => `Desplaza rígidamente todos los puntos según el vector (${tx.toFixed(2)}, ${ty.toFixed(2)}). El origen se traslada a dicho punto.`,
+          genericDesc: (det, orient) => `Mapea los vectores canónicos î a la Columna 1 y ĵ a la Columna 2. Magnitud del cambio de área = ${Math.abs(det).toFixed(2)}. Orientación: ${orient}.`,
+          compositionDesc: (det) => `Aplica sucesivamente A₁ y después A₂. La matriz total resultante es M = A₂ · A₁. Determinante compuesto = ${det.toFixed(2)}.`
+        }
+      }
+    };
+
+    let currentLang = localStorage.getItem('app_lang') || (navigator.language.startsWith('es') ? 'es' : 'en');
+
+    /* =========================================================================
+       2. APPLICATION STATE & DATA MODEL
+       ========================================================================= */
+    const state = {
+      labMode: 'space', // 'space' | 'polygon'
+      mode: 'rotation',
+      polygonSides: 3,
+      // Polygon vertices in math coordinates, editable by the user
+      polygonPoints: [
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: 0, y: 1 }
+      ],
+      // Primary 3x3 homogeneous matrix:
+      // [ m00, m01, m02 ]
+      // [ m10, m11, m12 ]
+      // [ m20, m21, m22 ]
+      A: [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ],
+      // Secondary matrix for operations/compositions:
+      B: [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ],
+      scalarK: 2.0,
+      animating: false,
+      highlightCol: -1, // Visual emphasis link (0: red/î, 1: blue/ĵ, 2: green/t)
+      highlightTimer: null
+    };
+
+    // Interpolation target for animated matrix transitions
+    let currentRenderMatrix = [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ];
+
+    /* =========================================================================
+       3. DOM CACHE & INITIALIZATION
+       ========================================================================= */
+    const labModeSelect = document.getElementById('lab-mode-select');
+    const modeSelect = document.getElementById('mode-select');
+    const langBtn = document.getElementById('lang-btn');
+    const presetsList = document.getElementById('presets-list');
+    const polygonSetupCard = document.getElementById('polygon-setup-card');
+    const polygonTypeSelect = document.getElementById('polygon-type-select');
+    const polygonPointsContainer = document.getElementById('polygon-points-container');
+    const matricesContainer = document.getElementById('matrices-input-container');
+    const mathOutput = document.getElementById('math-output');
+    const pedagogyText = document.getElementById('pedagogy-text');
+    const warningBox = document.getElementById('warning-box');
+    const canvas = document.getElementById('gridCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Pan & Zoom Engine
+    const view = {
+      x: 0,
+      y: 0,
+      scale: 50, // Pixels per unit
+      isDragging: false,
+      lastMouseX: 0,
+      lastMouseY: 0
+    };
+
+    function init() {
+      applyLanguage(currentLang);
+      setupCanvasEvents();
+      setModeDefaults(state.mode);
+      applyLabMode(state.labMode);
+      renderUI();
+      requestAnimationFrame(renderLoop);
+    }
+
+    /* =========================================================================
+       4. INTERNATIONALIZATION HANDLERS
+       ========================================================================= */
+    function applyLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('app_lang', lang);
+      langBtn.textContent = lang === 'en' ? 'ES' : 'EN';
+
+      const t = i18n[lang];
+      document.getElementById('lbl-site-title').textContent = t.siteTitle;
+      document.getElementById('lbl-mode').textContent = t.modeLabel;
+      document.getElementById('grp-transformations').label = t.grpTransformations;
+      document.getElementById('grp-operations').label = t.grpOperations;
+      document.getElementById('lbl-presets').textContent = t.presets;
+      document.getElementById('lbl-inputs').textContent = t.inputs;
+      document.getElementById('btn-reset').textContent = t.reset;
+      document.getElementById('lbl-computation').textContent = t.computation;
+      document.getElementById('lbl-explanation').textContent = t.explanation;
+      document.getElementById('hud-text').textContent = t.panZoomHud;
+      document.getElementById('lbl-space-title').textContent = t.spaceTitle;
+      document.getElementById('lbl-space-desc').textContent = t.spaceDesc;
+      document.getElementById('lbl-lab-mode').textContent = t.labModeLabel;
+      document.getElementById('lbl-polygon-setup').textContent = t.polygonSetup;
+      document.getElementById('lbl-polygon-type').textContent = t.polygonType;
+
+      // Update lab mode options labels
+      Array.from(labModeSelect.options).forEach(opt => {
+        if (t.labModes[opt.value]) opt.textContent = t.labModes[opt.value];
+      });
+
+      // Update polygon type options labels
+      Array.from(polygonTypeSelect.options).forEach(opt => {
+        if (t.polygonTypes[opt.value]) opt.textContent = t.polygonTypes[opt.value];
+      });
+
+      // Update mode options labels
+      Array.from(modeSelect.options).forEach(opt => {
+        if (t.modes[opt.value]) opt.textContent = t.modes[opt.value];
+      });
+
+      renderPolygonPointInputs();
+      renderPresets();
+      updateCalculationsAndPedagogy();
+    }
+
+    langBtn.addEventListener('click', () => {
+      applyLanguage(currentLang === 'en' ? 'es' : 'en');
+    });
+
+    modeSelect.addEventListener('change', (e) => {
+      state.mode = e.target.value;
+      setModeDefaults(state.mode);
+      renderUI();
+    });
+
+    labModeSelect.addEventListener('change', (e) => {
+      applyLabMode(e.target.value);
+    });
+
+    polygonTypeSelect.addEventListener('change', (e) => {
+      const sides = parseInt(e.target.value, 10);
+      state.polygonSides = sides;
+      // Resize polygonPoints, keeping existing points where possible
+      const defaults3 = [{ x: -1, y: -1 }, { x: 1, y: -1 }, { x: 0, y: 1 }];
+      const defaults4 = [{ x: -1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: 1 }, { x: -1, y: 1 }];
+      state.polygonPoints = sides === 3 ? defaults3.map(p => ({...p})) : defaults4.map(p => ({...p}));
+      renderPolygonPointInputs();
+      renderUI();
+    });
+
+    function applyLabMode(mode) {
+      state.labMode = mode;
+      labModeSelect.value = mode;
+      const isPolygon = mode === 'polygon';
+      polygonSetupCard.style.display = isPolygon ? 'block' : 'none';
+      document.getElementById('grp-operations').style.display = isPolygon ? 'none' : '';
+      renderPolygonPointInputs();
+      renderPresets();
+      updateCalculationsAndPedagogy();
+    }
+
+    /* Render numeric input fields for each polygon vertex */
+    function renderPolygonPointInputs() {
+      if (state.labMode !== 'polygon') return;
+      const t = i18n[currentLang];
+      polygonTypeSelect.value = String(state.polygonSides);
+      polygonPointsContainer.innerHTML = '';
+
+      state.polygonPoints.forEach((pt, idx) => {
+        const row = document.createElement('div');
+        row.className = 'entry-block';
+        row.style.borderLeft = `4px solid ${['#e63946', '#1d3557', '#2a9d8f', '#e9c46a'][idx % 4]}`;
+        row.innerHTML = `
+          <div class="entry-header"><span>${t.pointLabel(idx + 1)}</span></div>
+          <div style="display:flex; gap:0.4rem;">
+            <input type="number" class="entry-input pt-x" step="0.1" value="${pt.x.toFixed(2)}" style="flex:1;">
+            <input type="number" class="entry-input pt-y" step="0.1" value="${pt.y.toFixed(2)}" style="flex:1;">
+          </div>
+        `;
+        const xInput = row.querySelector('.pt-x');
+        const yInput = row.querySelector('.pt-y');
+        xInput.addEventListener('change', (e) => {
+          state.polygonPoints[idx].x = parseFloat(e.target.value) || 0;
+          updateCalculationsAndPedagogy();
+        });
+        yInput.addEventListener('change', (e) => {
+          state.polygonPoints[idx].y = parseFloat(e.target.value) || 0;
+          updateCalculationsAndPedagogy();
+        });
+        polygonPointsContainer.appendChild(row);
+      });
+    }
+
+    /* =========================================================================
+       5. MATHEMATICS & MATRIX COMPUTATION CORE
+       ========================================================================= */
+    // Determinant of 2x2 upper-left submatrix
+    function det2x2(m) {
+      return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+    }
+
+    // Multiply two 3x3 matrices
+    function multiply3x3(A, B) {
+      const C = [[0,0,0],[0,0,0],[0,0,0]];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          C[i][j] = A[i][0] * B[0][j] + A[i][1] * B[1][j] + A[i][2] * B[2][j];
+        }
+      }
+      return C;
+    }
+
+    // Multiply two 2x2 matrices
+    function multiply2x2(A, B) {
+      return [
+        [A[0][0]*B[0][0] + A[0][1]*B[1][0], A[0][0]*B[0][1] + A[0][1]*B[1][1]],
+        [A[1][0]*B[0][0] + A[1][1]*B[1][0], A[1][0]*B[0][1] + A[1][1]*B[1][1]]
+      ];
+    }
+
+    // Inverse of 2x2 matrix
+    function inverse2x2(m) {
+      const d = det2x2(m);
+      if (Math.abs(d) < 1e-7) return null;
+      const invD = 1.0 / d;
+      return [
+        [ m[1][1] * invD, -m[0][1] * invD ],
+        [-m[1][0] * invD,  m[0][0] * invD ]
+      ];
+    }
+
+    // Transpose of 2x2 matrix
+    function transpose2x2(m) {
+      return [
+        [m[0][0], m[1][0]],
+        [m[0][1], m[1][1]]
+      ];
+    }
+
+    /* Sets canonical matrix presets per selected mode */
+    function setModeDefaults(mode) {
+      warningBox.style.display = 'none';
+      state.A = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+      state.B = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+      state.scalarK = 2.0;
+
+      if (mode === 'rotation') {
+        const rad = 45 * Math.PI / 180;
+        state.A[0][0] = Math.cos(rad); state.A[0][1] = -Math.sin(rad);
+        state.A[1][0] = Math.sin(rad); state.A[1][1] = Math.cos(rad);
+      } else if (mode === 'scaling') {
+        state.A[0][0] = 2; state.A[1][1] = 1.5;
+      } else if (mode === 'shear') {
+        state.A[0][1] = 1.0; // Shear X
+      } else if (mode === 'reflection') {
+        state.A[0][0] = 0; state.A[0][1] = 1;
+        state.A[1][0] = 1; state.A[1][1] = 0; // Across y = x
+      } else if (mode === 'translation') {
+        state.A[0][2] = 2; state.A[1][2] = 1.5;
+      } else if (mode === 'composition') {
+        // A1 = scale, A2 = rotate 45
+        const rad = 45 * Math.PI / 180;
+        state.B[0][0] = 1.5; state.B[1][1] = 1.5; // A1
+        state.A[0][0] = Math.cos(rad); state.A[0][1] = -Math.sin(rad); // A2
+        state.A[1][0] = Math.sin(rad); state.A[1][1] = Math.cos(rad);
+      }
+      triggerHighlight(-1);
+    }
+
+    /* =========================================================================
+       6. DYNAMIC UI, PRESETS & CONTROLS RENDERING
+       ========================================================================= */
+    function renderPresets() {
+      presetsList.innerHTML = '';
+
+      if (state.labMode === 'polygon') {
+        const tp = i18n[currentLang].polygonPresets;
+        const polyPresetsConfig = [
+          { label: tp.identity, action: () => { state.A = [[1,0,0],[0,1,0],[0,0,1]]; } },
+          { label: tp.rot90, action: () => { state.A = [[0,-1,0],[1,0,0],[0,0,1]]; } },
+          { label: tp.rot180, action: () => { state.A = [[-1,0,0],[0,-1,0],[0,0,1]]; } },
+          { label: tp.scale2, action: () => { state.A = [[2,0,0],[0,2,0],[0,0,1]]; } },
+          { label: tp.scaleHalf, action: () => { state.A = [[0.5,0,0],[0,0.5,0],[0,0,1]]; } },
+          { label: tp.reflectX, action: () => { state.A = [[1,0,0],[0,-1,0],[0,0,1]]; } },
+          { label: tp.reflectY, action: () => { state.A = [[-1,0,0],[0,1,0],[0,0,1]]; } },
+          { label: tp.shearX, action: () => { state.A = [[1,1,0],[0,1,0],[0,0,1]]; } },
+          { label: tp.translate, action: () => { state.A = [[1,0,2],[0,1,1],[0,0,1]]; } }
+        ];
+        polyPresetsConfig.forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = 'preset-btn';
+          btn.textContent = p.label;
+          btn.onclick = () => { p.action(); renderUI(); };
+          presetsList.appendChild(btn);
+        });
+        return;
+      }
+
+      const t = i18n[currentLang].presetsList;
+
+      const presetsConfig = [
+        { label: t.rot45, action: () => { modeSelect.value = 'rotation'; setModeDefaults('rotation'); } },
+        { label: t.rot90, action: () => {
+            modeSelect.value = 'rotation'; state.mode = 'rotation';
+            state.A = [[0, -1, 0], [1, 0, 0], [0, 0, 1]];
+          }
+        },
+        { label: t.scaleDouble, action: () => {
+            modeSelect.value = 'scaling'; state.mode = 'scaling';
+            state.A = [[2, 0, 0], [0, 2, 0], [0, 0, 1]];
+          }
+        },
+        { label: t.scaleNonUniform, action: () => {
+            modeSelect.value = 'scaling'; state.mode = 'scaling';
+            state.A = [[2, 0, 0], [0, 0.5, 0], [0, 0, 1]];
+          }
+        },
+        { label: t.shearX, action: () => {
+            modeSelect.value = 'shear'; state.mode = 'shear';
+            state.A = [[1, 1, 0], [0, 1, 0], [0, 0, 1]];
+          }
+        },
+        { label: t.reflectYeqX, action: () => {
+            modeSelect.value = 'reflection'; state.mode = 'reflection';
+            state.A = [[0, 1, 0], [1, 0, 0], [0, 0, 1]];
+          }
+        },
+        { label: t.trans2_1, action: () => {
+            modeSelect.value = 'translation'; state.mode = 'translation';
+            state.A = [[1, 0, 2], [0, 1, 1], [0, 0, 1]];
+          }
+        },
+        { label: t.collapseLine, action: () => {
+            modeSelect.value = 'generic_affine'; state.mode = 'generic_affine';
+            state.A = [[1, 1, 0], [1, 1, 0], [0, 0, 1]];
+          }
+        }
+      ];
+
+      presetsConfig.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.textContent = p.label;
+        btn.onclick = () => { p.action(); renderUI(); };
+        presetsList.appendChild(btn);
+      });
+    }
+
+    document.getElementById('btn-reset').onclick = () => {
+      setModeDefaults(state.mode);
+      renderUI();
+    };
+
+    function triggerHighlight(colIdx) {
+      state.highlightCol = colIdx;
+      if (state.highlightTimer) clearTimeout(state.highlightTimer);
+      if (colIdx >= 0) {
+        state.highlightTimer = setTimeout(() => { state.highlightCol = -1; }, 700);
+      }
+    }
+
+    function renderUI() {
+      matricesContainer.innerHTML = '';
+
+      if (state.labMode === 'polygon') {
+        // In polygon mode we only ever edit the affine transformation matrix A (3x3)
+        matricesContainer.appendChild(createMatrixControls(state.A, 'A', 3, currentLang === 'en' ? "Transformation Matrix A" : "Matriz de Transformación A"));
+        document.getElementById('affine-vs-euclidean-pane').style.display = 'block';
+        renderPresets();
+        updateCalculationsAndPedagogy();
+        return;
+      }
+
+      const isAffine = ['translation', 'generic_affine'].includes(state.mode);
+      const isComposition = state.mode === 'composition';
+      const isBinaryOp = ['op_add', 'op_sub', 'op_mult'].includes(state.mode);
+      const isScalarOp = state.mode === 'op_scalar';
+
+      // Affine info pane visibility
+      document.getElementById('affine-vs-euclidean-pane').style.display =
+        (isAffine || state.mode === 'translation') ? 'block' : 'none';
+
+      // Primary Matrix A
+      const labelA = isComposition ? "Matrix A₂ (Applied Second)" : (isBinaryOp ? "Matrix A" : "Transformation Matrix A");
+      matricesContainer.appendChild(createMatrixControls(state.A, 'A', isAffine ? 3 : 2, labelA));
+
+      // Scalar factor block
+      if (isScalarOp) {
+        const scalarBlock = document.createElement('div');
+        scalarBlock.className = 'entry-block';
+        scalarBlock.style.borderLeft = '4px solid var(--text-main)';
+        scalarBlock.innerHTML = `
+          <div class="entry-header"><span>Scalar Factor (k)</span><span>${state.scalarK.toFixed(2)}</span></div>
+          <input type="range" class="entry-slider" min="-5" max="5" step="0.1" value="${state.scalarK}">
+        `;
+        const slider = scalarBlock.querySelector('input');
+        slider.addEventListener('input', (e) => {
+          state.scalarK = parseFloat(e.target.value);
+          scalarBlock.querySelector('.entry-header span:last-child').textContent = state.scalarK.toFixed(2);
+          updateCalculationsAndPedagogy();
+        });
+        matricesContainer.appendChild(scalarBlock);
+      }
+
+      // Secondary Matrix B / A1
+      if (isComposition || isBinaryOp) {
+        const labelB = isComposition ? "Matrix A₁ (Applied First)" : "Matrix B";
+        matricesContainer.appendChild(createMatrixControls(state.B, 'B', 2, labelB));
+      }
+
+      renderPresets();
+      updateCalculationsAndPedagogy();
+    }
+
+    /* Helper: constructs interactive slider + numeric input card for matrices */
+    function createMatrixControls(matRef, name, dim, titleText) {
+      const container = document.createElement('div');
+      container.innerHTML = `<div style="font-weight:600; font-size:0.85rem; margin-bottom:0.4rem; color:var(--text-muted);">${titleText}</div>`;
+
+      const grid = document.createElement('div');
+      grid.className = `matrix-input-grid dim-${dim}x${dim}`;
+
+      for (let r = 0; r < dim; r++) {
+        for (let c = 0; c < dim; c++) {
+          if (dim === 3 && r === 2) {
+            // Homogeneous coordinate constant row [0, 0, 1]
+            const fixedBlock = document.createElement('div');
+            fixedBlock.className = `entry-block col-idx-${c}`;
+            fixedBlock.style.opacity = '0.5';
+            fixedBlock.innerHTML = `<div class="entry-header"><span>${name}[${r+1},${c+1}]</span></div><div style="font-size:0.85rem; padding:0.2rem;">${matRef[r][c]}</div>`;
+            grid.appendChild(fixedBlock);
+            continue;
+          }
+
+          const block = document.createElement('div');
+          block.className = `entry-block col-idx-${c}`;
+
+          const val = matRef[r][c];
+          block.innerHTML = `
+            <div class="entry-header">
+              <span>${name}[${r+1},${c+1}]</span>
+              <span class="val-display">${val.toFixed(2)}</span>
+            </div>
+            <input type="number" class="entry-input" step="0.1" value="${val.toFixed(2)}">
+            <input type="range" class="entry-slider" min="-5" max="5" step="0.1" value="${val}">
+          `;
+
+          const numInput = block.querySelector('.entry-input');
+          const slider = block.querySelector('.entry-slider');
+          const valDisplay = block.querySelector('.val-display');
+
+          const updateEntry = (v) => {
+            const parsed = parseFloat(v) || 0;
+            matRef[r][c] = parsed;
+            numInput.value = parsed.toFixed(2);
+            slider.value = parsed;
+            valDisplay.textContent = parsed.toFixed(2);
+            triggerHighlight(c);
+            updateCalculationsAndPedagogy();
+          };
+
+          slider.addEventListener('input', (e) => updateEntry(e.target.value));
+          numInput.addEventListener('change', (e) => updateEntry(e.target.value));
+
+          grid.appendChild(block);
+        }
+      }
+
+      container.appendChild(grid);
+      return container;
+    }
+
+    /* =========================================================================
+       7. MATHEMATICAL FORMULA RENDERING & DYNAMIC PEDAGOGY
+       ========================================================================= */
+    function updateCalculationsAndPedagogy() {
+      const t = i18n[currentLang];
+      warningBox.style.display = 'none';
+
+      let activeTransformMatrix = state.A;
+      let mathTex = "";
+      let pedagogyHTML = "";
+
+      if (state.labMode === 'polygon') {
+        const toTex3x3p = (m) => `\\begin{pmatrix} ${m[0][0].toFixed(2)} & ${m[0][1].toFixed(2)} & ${m[0][2].toFixed(2)} \\\\ ${m[1][0].toFixed(2)} & ${m[1][1].toFixed(2)} & ${m[1][2].toFixed(2)} \\\\ 0 & 0 & 1 \\end{pmatrix}`;
+        const detP = det2x2(state.A);
+        mathTex = `A = ${toTex3x3p(state.A)}, \\quad \\det(A_{2\\times 2}) = ${detP.toFixed(2)}`;
+        const polyName = state.polygonSides === 3
+          ? (currentLang === 'en' ? "triangle" : "triángulo")
+          : (currentLang === 'en' ? "quadrilateral" : "cuadrilátero");
+        pedagogyHTML = t.polygonPedagogy(polyName, detP);
+
+        if (Math.abs(detP) < 1e-5) {
+          warningBox.textContent = t.singularWarn;
+          warningBox.style.display = 'block';
+        }
+
+        if (window.katex) {
+          try { katex.render(mathTex, mathOutput, { throwOnError: false, displayMode: true }); }
+          catch (e) { mathOutput.textContent = mathTex; }
+        } else {
+          mathOutput.textContent = mathTex;
+        }
+        pedagogyText.innerHTML = pedagogyHTML;
+        targetRenderMatrix = state.A;
+        return;
+      }
+
+      const toTex2x2 = (m) => `\\begin{pmatrix} ${m[0][0].toFixed(2)} & ${m[0][1].toFixed(2)} \\\\ ${m[1][0].toFixed(2)} & ${m[1][1].toFixed(2)} \\end{pmatrix}`;
+      const toTex3x3 = (m) => `\\begin{pmatrix} ${m[0][0].toFixed(2)} & ${m[0][1].toFixed(2)} & ${m[0][2].toFixed(2)} \\\\ ${m[1][0].toFixed(2)} & ${m[1][1].toFixed(2)} & ${m[1][2].toFixed(2)} \\\\ 0 & 0 & 1 \\end{pmatrix}`;
+
+      const detA = det2x2(state.A);
+
+      if (state.mode === 'rotation') {
+        const angleRad = Math.atan2(state.A[1][0], state.A[0][0]);
+        const angleDeg = angleRad * (180 / Math.PI);
+        mathTex = `R = ${toTex2x2(state.A)}, \\quad \\det(R) = ${detA.toFixed(2)}`;
+        pedagogyHTML = t.pedagogy.rotDesc(angleDeg, detA);
+
+      } else if (state.mode === 'scaling') {
+        mathTex = `S = ${toTex2x2(state.A)}, \\quad \\det(S) = ${detA.toFixed(2)}`;
+        pedagogyHTML = t.pedagogy.scaleDesc(state.A[0][0], state.A[1][1], detA);
+
+      } else if (state.mode === 'shear') {
+        const isShearX = Math.abs(state.A[0][1]) > 0.001;
+        const k = isShearX ? state.A[0][1] : state.A[1][0];
+        mathTex = `H = ${toTex2x2(state.A)}, \\quad \\det(H) = ${detA.toFixed(2)}`;
+        pedagogyHTML = t.pedagogy.shearDesc(k, isShearX ? 'x' : 'y', detA);
+
+      } else if (state.mode === 'reflection') {
+        mathTex = `M = ${toTex2x2(state.A)}, \\quad \\det(M) = ${detA.toFixed(2)}`;
+        pedagogyHTML = t.pedagogy.reflectDesc("the chosen reflection vector", detA);
+
+      } else if (state.mode === 'translation') {
+        const tx = state.A[0][2], ty = state.A[1][2];
+        mathTex = `T = ${toTex3x3(state.A)}`;
+        pedagogyHTML = t.pedagogy.transDesc(tx, ty);
+
+      } else if (state.mode === 'generic_affine') {
+        const orient = detA > 0 ? (currentLang === 'en' ? "Preserved (det > 0)" : "Preservada (det > 0)")
+                                : (currentLang === 'en' ? "Reversed (det < 0)" : "Invertida (det < 0)");
+        mathTex = `A = ${toTex3x3(state.A)}, \\quad \\det(A_{2\\times 2}) = ${detA.toFixed(2)}`;
+        pedagogyHTML = t.pedagogy.genericDesc(detA, orient);
+
+      } else if (state.mode === 'composition') {
+        // M = A2 * A1
+        const comp = multiply3x3(state.A, state.B);
+        activeTransformMatrix = comp;
+        const detComp = det2x2(comp);
+        mathTex = `M = A_2 \\cdot A_1 = ${toTex2x2(state.A)} ${toTex2x2(state.B)} = ${toTex2x2(comp)}`;
+        pedagogyHTML = t.pedagogy.compositionDesc(detComp);
+
+      } else if (state.mode === 'op_add') {
+        const R = [
+          [state.A[0][0] + state.B[0][0], state.A[0][1] + state.B[0][1]],
+          [state.A[1][0] + state.B[1][0], state.A[1][1] + state.B[1][1]]
+        ];
+        mathTex = `A + B = ${toTex2x2(state.A)} + ${toTex2x2(state.B)} = ${toTex2x2(R)}`;
+        pedagogyHTML = currentLang === 'en'
+          ? "Matrix addition corresponds to the superposition of two linear vector transformations."
+          : "La suma de matrices corresponde a la superposición término a término de transformaciones lineales.";
+        activeTransformMatrix = [[R[0][0], R[0][1], 0], [R[1][0], R[1][1], 0], [0,0,1]];
+
+      } else if (state.mode === 'op_sub') {
+        const R = [
+          [state.A[0][0] - state.B[0][0], state.A[0][1] - state.B[0][1]],
+          [state.A[1][0] - state.B[1][0], state.A[1][1] - state.B[1][1]]
+        ];
+        mathTex = `A - B = ${toTex2x2(state.A)} - ${toTex2x2(state.B)} = ${toTex2x2(R)}`;
+        pedagogyHTML = currentLang === 'en'
+          ? "Matrix subtraction computes the entry-wise difference between transformations."
+          : "La resta matricial calcula la diferencia entrada por entrada de ambas operaciones lineales.";
+        activeTransformMatrix = [[R[0][0], R[0][1], 0], [R[1][0], R[1][1], 0], [0,0,1]];
+
+      } else if (state.mode === 'op_scalar') {
+        const k = state.scalarK;
+        const R = [
+          [k * state.A[0][0], k * state.A[0][1]],
+          [k * state.A[1][0], k * state.A[1][1]]
+        ];
+        mathTex = `${k.toFixed(2)} \\cdot A = ${toTex2x2(R)}`;
+        pedagogyHTML = currentLang === 'en'
+          ? `Scaling every element by ${k.toFixed(2)} scales the determinant by k² = ${(k*k).toFixed(2)}.`
+          : `Multiplicar la matriz por ${k.toFixed(2)} escala el determinante en un factor k² = ${(k*k).toFixed(2)}.`;
+        activeTransformMatrix = [[R[0][0], R[0][1], 0], [R[1][0], R[1][1], 0], [0,0,1]];
+
+      } else if (state.mode === 'op_mult') {
+        const R = multiply2x2(state.A, state.B);
+        mathTex = `A \\cdot B = ${toTex2x2(state.A)} ${toTex2x2(state.B)} = ${toTex2x2(R)}`;
+        pedagogyHTML = currentLang === 'en'
+          ? "Matrix multiplication represents the composition of linear maps: (A · B)x = A(Bx)."
+          : "La multiplicación de matrices representa la composición funcional de transformaciones lineales.";
+        activeTransformMatrix = [[R[0][0], R[0][1], 0], [R[1][0], R[1][1], 0], [0,0,1]];
+
+      } else if (state.mode === 'op_transpose') {
+        const R = transpose2x2(state.A);
+        mathTex = `A^T = ${toTex2x2(R)}`;
+        pedagogyHTML = currentLang === 'en'
+          ? "Transposition swaps rows and columns. While the geometric axis tilts, det(Aᵀ) = det(A)."
+          : "La transpuesta intercambia filas por columnas. El determinante se conserva: det(Aᵀ) = det(A).";
+        activeTransformMatrix = [[R[0][0], R[0][1], 0], [R[1][0], R[1][1], 0], [0,0,1]];
+
+      } else if (state.mode === 'op_det') {
+        const areaRatio = Math.abs(detA);
+        mathTex = `\\det(A) = (${state.A[0][0].toFixed(2)})(${state.A[1][1].toFixed(2)}) - (${state.A[0][1].toFixed(2)})(${state.A[1][0].toFixed(2)}) = ${detA.toFixed(2)}`;
+        pedagogyHTML = `${t.detUnitSquare} <b>${areaRatio.toFixed(2)}</b>. ` + (detA < 0
+          ? (currentLang === 'en' ? "The negative sign indicates orientation reversal." : "El signo negativo indica que la orientación se ha invertido.")
+          : (currentLang === 'en' ? "Orientation is preserved." : "La orientación se mantiene."));
+
+      } else if (state.mode === 'op_inverse') {
+        if (Math.abs(detA) < 1e-6) {
+          warningBox.textContent = t.singularWarn;
+          warningBox.style.display = 'block';
+          mathTex = `\\det(A) = 0 \\implies A^{-1} \\text{ does not exist}`;
+          pedagogyHTML = t.singularWarn;
+          activeTransformMatrix = state.A;
+        } else {
+          const inv = inverse2x2(state.A);
+          mathTex = `A^{-1} = \\frac{1}{${detA.toFixed(2)}} \\begin{pmatrix} ${state.A[1][1].toFixed(2)} & ${(-state.A[0][1]).toFixed(2)} \\\\ ${(-state.A[1][0]).toFixed(2)} & ${state.A[0][0].toFixed(2)} \\end{pmatrix} = ${toTex2x2(inv)}`;
+          pedagogyHTML = currentLang === 'en'
+            ? "The inverse matrix reverses the transformation, returning all basis vectors to their initial state."
+            : "La matriz inversa revierte geométricamente la transformación, devolviendo los vectores canónicos al reposo.";
+          activeTransformMatrix = [[inv[0][0], inv[0][1], 0], [inv[1][0], inv[1][1], 0], [0,0,1]];
+        }
+      }
+
+      // Check singularity warning for linear transformations
+      if (['rotation', 'scaling', 'shear', 'reflection', 'generic_affine'].includes(state.mode) && Math.abs(detA) < 1e-5) {
+        warningBox.textContent = t.singularWarn;
+        warningBox.style.display = 'block';
+      }
+
+      // Render KaTeX with fallback
+      if (window.katex) {
+        try {
+          katex.render(mathTex, mathOutput, { throwOnError: false, displayMode: true });
+        } catch (e) {
+          mathOutput.textContent = mathTex;
+        }
+      } else {
+        mathOutput.textContent = mathTex;
+      }
+
+      pedagogyText.innerHTML = pedagogyHTML;
+      targetRenderMatrix = activeTransformMatrix;
+    }
+
+    /* Target matrix for smooth canvas interpolation */
+    let targetRenderMatrix = [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ];
+
+    /* =========================================================================
+       8. CANVAS 2D GRAPHICS & VECTOR ENGINE
+       ========================================================================= */
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      if (canvas.width !== rect.width || canvas.height !== rect.height) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+    }
+
+    function setupCanvasEvents() {
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      // Pan coordinates around center
+      view.x = canvas.width / 2;
+      view.y = canvas.height / 2;
+
+      canvas.addEventListener('mousedown', (e) => {
+        view.isDragging = true;
+        view.lastMouseX = e.clientX;
+        view.lastMouseY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!view.isDragging) return;
+        view.x += e.clientX - view.lastMouseX;
+        view.y += e.clientY - view.lastMouseY;
+        view.lastMouseX = e.clientX;
+        view.lastMouseY = e.clientY;
+      });
+
+      window.addEventListener('mouseup', () => { view.isDragging = false; });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+        const mouseY = e.clientY - canvas.getBoundingClientRect().top;
+
+        // Zoom centered on mouse position
+        view.x = mouseX - (mouseX - view.x) * zoomFactor;
+        view.y = mouseY - (mouseY - view.y) * zoomFactor;
+        view.scale = Math.min(Math.max(view.scale * zoomFactor, 15), 250);
+      }, { passive: false });
+    }
+
+    /* Transform math point (x, y) to screen pixels */
+    function toScreen(x, y) {
+      return {
+        x: view.x + x * view.scale,
+        y: view.y - y * view.scale // Y axis inverted in Canvas
+      };
+    }
+
+    /* Linear interpolation between current and target matrix entries */
+    function interpolateMatrix() {
+      const alpha = 0.18; // Damping rate
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const diff = targetRenderMatrix[r][c] - currentRenderMatrix[r][c];
+          currentRenderMatrix[r][c] += diff * alpha;
+        }
+      }
+    }
+
+    /* Apply current interpolated 3x3 matrix to a 2D affine vector */
+    function applyTransform(x, y, m) {
+      return {
+        x: m[0][0] * x + m[0][1] * y + m[0][2],
+        y: m[1][0] * x + m[1][1] * y + m[1][2]
+      };
+    }
+
+    /* Render an arrow representing a vector */
+    function drawVector(ctx, fromX, fromY, toX, toY, color, lineWidth = 2.5, isHighlighted = false) {
+      const p1 = toScreen(fromX, fromY);
+      const p2 = toScreen(toX, toY);
+      const headlen = 10;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = isHighlighted ? lineWidth * 2 : lineWidth;
+
+      if (isHighlighted) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(p2.x, p2.y);
+      ctx.lineTo(p2.x - headlen * Math.cos(angle - Math.PI / 6), p2.y - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(p2.x - headlen * Math.cos(angle + Math.PI / 6), p2.y - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* Renders the reference glyph (Letter 'F') */
+    function drawReferenceF(ctx, m, isGhost = false) {
+      const fPoints = [
+        { x: 0.2, y: 0.2 }, { x: 0.2, y: 0.8 },
+        { x: 0.6, y: 0.8 }, { x: 0.6, y: 0.65 },
+        { x: 0.35, y: 0.65 }, { x: 0.35, y: 0.5 },
+        { x: 0.55, y: 0.5 }, { x: 0.55, y: 0.38 },
+        { x: 0.35, y: 0.38 }, { x: 0.35, y: 0.2 }
+      ];
+
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i < fPoints.length; i++) {
+        const pt = isGhost ? fPoints[i] : applyTransform(fPoints[i].x, fPoints[i].y, m);
+        const scr = toScreen(pt.x, pt.y);
+        if (i === 0) ctx.moveTo(scr.x, scr.y);
+        else ctx.lineTo(scr.x, scr.y);
+      }
+      ctx.closePath();
+
+      if (isGhost) {
+        ctx.fillStyle = 'rgba(108, 117, 125, 0.12)';
+        ctx.strokeStyle = 'rgba(108, 117, 125, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+      } else {
+        ctx.fillStyle = 'rgba(42, 157, 143, 0.25)';
+        ctx.strokeStyle = '#2a9d8f';
+        ctx.lineWidth = 2;
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* Draws the polygon lab: axes/grid, original polygon (ghost) and transformed polygon */
+    function renderPolygonLoop() {
+      const m = currentRenderMatrix;
+      const minX = -view.x / view.scale;
+      const maxX = (canvas.width - view.x) / view.scale;
+      const minY = -(canvas.height - view.y) / view.scale;
+      const maxY = view.y / view.scale;
+
+      // Cartesian grid
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#e9ecef';
+      for (let x = Math.floor(minX); x <= Math.ceil(maxX); x++) {
+        const p1 = toScreen(x, minY), p2 = toScreen(x, maxY);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      }
+      for (let y = Math.floor(minY); y <= Math.ceil(maxY); y++) {
+        const p1 = toScreen(minX, y), p2 = toScreen(maxX, y);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      }
+      const origin = toScreen(0, 0);
+      ctx.strokeStyle = '#adb5bd';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(canvas.width, origin.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, canvas.height); ctx.stroke();
+      ctx.fillStyle = '#495057';
+      ctx.beginPath(); ctx.arc(origin.x, origin.y, 3.5, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+
+      const pts = state.polygonPoints;
+
+      // Ghost original polygon
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        const s = toScreen(p.x, p.y);
+        if (i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+      });
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      // Transformed polygon
+      const tpts = pts.map(p => applyTransform(p.x, p.y, m));
+      ctx.save();
+      ctx.fillStyle = varColor('--area-fill');
+      ctx.strokeStyle = varColor('--area-stroke');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      tpts.forEach((p, i) => {
+        const s = toScreen(p.x, p.y);
+        if (i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+      });
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Vertex dots + labels for original and transformed
+      pts.forEach((p, i) => {
+        const s = toScreen(p.x, p.y);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, 2 * Math.PI); ctx.fill();
+      });
+      const vColors = ['#e63946', '#1d3557', '#2a9d8f', '#e9c46a'];
+      tpts.forEach((p, i) => {
+        const s = toScreen(p.x, p.y);
+        ctx.fillStyle = vColors[i % 4];
+        ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, 2 * Math.PI); ctx.fill();
+        drawLabel(ctx, p.x, p.y, `P${i + 1}'`, vColors[i % 4]);
+      });
+      ctx.restore();
+    }
+
+    /* Main real-time visual loop */
+    function renderLoop() {
+      resizeCanvas();
+      interpolateMatrix();
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (state.labMode === 'polygon') {
+        renderPolygonLoop();
+        requestAnimationFrame(renderLoop);
+        return;
+      }
+
+      const m = currentRenderMatrix;
+      const step = view.scale;
+      const minX = -view.x / view.scale;
+      const maxX = (canvas.width - view.x) / view.scale;
+      const minY = -(canvas.height - view.y) / view.scale;
+      const maxY = view.y / view.scale;
+
+      // 1. Draw Cartesian Grid Lines
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#e9ecef';
+      for (let x = Math.floor(minX); x <= Math.ceil(maxX); x++) {
+        const p1 = toScreen(x, minY);
+        const p2 = toScreen(x, maxY);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      }
+      for (let y = Math.floor(minY); y <= Math.ceil(maxY); y++) {
+        const p1 = toScreen(minX, y);
+        const p2 = toScreen(maxX, y);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      }
+
+      // 2. Draw Transformed Grid Mesh (illustrates space distortion)
+      ctx.strokeStyle = 'rgba(200, 205, 215, 0.4)';
+      ctx.lineWidth = 1;
+      const range = 8;
+      for (let i = -range; i <= range; i++) {
+        // Vertical transformed line
+        const vStart = toScreen(...Object.values(applyTransform(i, -range, m)));
+        const vEnd = toScreen(...Object.values(applyTransform(i, range, m)));
+        ctx.beginPath(); ctx.moveTo(vStart.x, vStart.y); ctx.lineTo(vEnd.x, vEnd.y); ctx.stroke();
+
+        // Horizontal transformed line
+        const hStart = toScreen(...Object.values(applyTransform(-range, i, m)));
+        const hEnd = toScreen(...Object.values(applyTransform(range, i, m)));
+        ctx.beginPath(); ctx.moveTo(hStart.x, hStart.y); ctx.lineTo(hEnd.x, hEnd.y); ctx.stroke();
+      }
+
+      // 3. Draw Main Cartesian Axes
+      const origin = toScreen(0, 0);
+      ctx.strokeStyle = '#adb5bd';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(canvas.width, origin.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, canvas.height); ctx.stroke();
+
+      // Axis Origin Dot
+      ctx.fillStyle = '#495057';
+      ctx.beginPath(); ctx.arc(origin.x, origin.y, 3.5, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+
+      // 4. Ghost Preimage (Reference unit square & F)
+      ctx.save();
+      const us0 = toScreen(0, 0), us1 = toScreen(1, 0), us2 = toScreen(1, 1), us3 = toScreen(0, 1);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(us0.x, us0.y); ctx.lineTo(us1.x, us1.y); ctx.lineTo(us2.x, us2.y); ctx.lineTo(us3.x, us3.y);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      drawReferenceF(ctx, m, true);
+
+      // 5. Transformed Unit Square Area (Parallelogram)
+      const pOrigin = applyTransform(0, 0, m);
+      const pI = applyTransform(1, 0, m);
+      const pJ = applyTransform(0, 1, m);
+      const pIJ = applyTransform(1, 1, m);
+
+      const sp0 = toScreen(pOrigin.x, pOrigin.y);
+      const sp1 = toScreen(pI.x, pI.y);
+      const sp2 = toScreen(pIJ.x, pIJ.y);
+      const sp3 = toScreen(pJ.x, pJ.y);
+
+      ctx.save();
+      ctx.fillStyle = varColor('--area-fill');
+      ctx.strokeStyle = varColor('--area-stroke');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(sp0.x, sp0.y);
+      ctx.lineTo(sp1.x, sp1.y);
+      ctx.lineTo(sp2.x, sp2.y);
+      ctx.lineTo(sp3.x, sp3.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // 6. Transformed Reference Figure
+      drawReferenceF(ctx, m, false);
+
+      // 7. Basis Vectors: î (Red/Col 1), ĵ (Blue/Col 2) and Translation Vector
+      const hasTranslation = Math.abs(m[0][2]) > 0.001 || Math.abs(m[1][2]) > 0.001;
+      if (hasTranslation) {
+        drawVector(ctx, 0, 0, pOrigin.x, pOrigin.y, '#2a9d8f', 2, state.highlightCol === 2);
+      }
+
+      // î (maps to column 1)
+      drawVector(ctx, pOrigin.x, pOrigin.y, pI.x, pI.y, '#e63946', 3, state.highlightCol === 0);
+      // ĵ (maps to column 2)
+      drawVector(ctx, pOrigin.x, pOrigin.y, pJ.x, pJ.y, '#1d3557', 3, state.highlightCol === 1);
+
+      // Vector Endpoint Labels
+      drawLabel(ctx, pI.x, pI.y, "î'", '#e63946');
+      drawLabel(ctx, pJ.x, pJ.y, "ĵ'", '#1d3557');
+      if (hasTranslation) drawLabel(ctx, pOrigin.x, pOrigin.y, "T(0)", '#2a9d8f');
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    function drawLabel(ctx, mathX, mathY, text, color) {
+      const s = toScreen(mathX, mathY);
+      ctx.save();
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = color;
+      ctx.fillText(text, s.x + 8, s.y - 6);
+      ctx.restore();
+    }
+
+    function varColor(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Launch Application
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
